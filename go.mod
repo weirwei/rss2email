@@ -11,6 +11,11 @@ require (
 )
 
 require (
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
+)
+
+require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -22,6 +27,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mozillazg/go-pinyin v0.20.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/spf13/cobra v1.9.1
 	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/text v0.20.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

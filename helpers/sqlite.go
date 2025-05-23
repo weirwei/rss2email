@@ -14,7 +14,7 @@ var (
 )
 
 func InitSQLite() {
-	RSSSQLiteHelper, err = gorm.Open(sqlite.Open(iutil.GetRootPath()+"/db/rss.sqlite"), &gorm.Config{})
+	RSSSQLiteHelper, err = gorm.Open(sqlite.Open(iutil.GetRootPath()+"/db/rss.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}

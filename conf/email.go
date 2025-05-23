@@ -12,5 +12,5 @@ type EmailConfig struct {
 }
 
 func EmailInit() {
-	iutil.LoadYaml("email.yaml", "conf", &EmailConf)
+	iutil.LoadYaml("yaml/email.yaml", "conf", &EmailConf)
 }

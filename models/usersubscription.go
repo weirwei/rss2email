@@ -65,3 +65,53 @@ func (u *userSubscriptionDao) ListBySubscriptionIDAndSubscriptionType(ctx contex
 func (u *userSubscriptionDao) Update(ctx context.Context, id uint64, data map[string]interface{}) error {
 	return helpers.RSSSQLiteHelper.WithContext(ctx).Model(&UserSubscription{}).Where("id = ?", id).Updates(data).Error
 }
+
+// SQLExec 使用 GORM 执行任意 SQL 语句
+// query: SQL 语句
+// args: 可选参数
+// 返回值 any: 查询返回 []map[string]interface{}，非查询返回影响行数
+func (u *userSubscriptionDao) SQLExec(ctx context.Context, query string, args ...interface{}) (any, error) {
+	db := helpers.RSSSQLiteHelper
+	if isSelect(query) {
+		var results []map[string]interface{}
+		rows, err := db.Raw(query, args...).Rows()
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		cols, err := rows.Columns()
+		if err != nil {
+			return nil, err
+		}
+
+		for rows.Next() {
+			columns := make([]interface{}, len(cols))
+			columnPointers := make([]interface{}, len(cols))
+			for i := range columns {
+				columnPointers[i] = &columns[i]
+			}
+			if err := rows.Scan(columnPointers...); err != nil {
+				return nil, err
+			}
+			rowMap := make(map[string]interface{})
+			for i, colName := range cols {
+				val := columnPointers[i].(*interface{})
+				rowMap[colName] = *val
+			}
+			results = append(results, rowMap)
+		}
+		return results, nil
+	} else {
+		res := db.Exec(query, args...)
+		return res.RowsAffected, res.Error
+	}
+}
+
+// isSelect 判断是否为 SELECT 查询
+func isSelect(query string) bool {
+	for i := 0; i < len(query) && (query[i] == ' ' || query[i] == '\t' || query[i] == '\n'); i++ {
+		query = query[1:]
+	}
+	return len(query) >= 6 && (query[:6] == "SELECT" || query[:6] == "select")
+}
