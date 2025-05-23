@@ -16,6 +16,13 @@ RUN go mod download
 
 # 编译
 COPY . $GOPATH/${APP_NAME}/
+
+# --- 添加这一行：安装构建所需的工具，包括 gcc ---
+# --no-cache 可以避免在镜像中保留 apk 缓存，减小镜像大小
+RUN apk --no-cache add build-base
+
+ENV CGO_ENABLED=1
+
 RUN go build -o /usr/local/bin/${APP_NAME} main.go
 
 FROM alpine:3.20
