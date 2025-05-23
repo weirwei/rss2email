@@ -10,25 +10,26 @@ import (
 	"github.com/weirwei/rss2email/constants"
 )
 
-var ErrDecoHackService = errors.New("decohack 推送失败")
+var ErrSspaiService = errors.New("sspai 推送失败")
 
-func DecoHackService(ctx context.Context) error {
-	decohackFeedURL := conf.FeedSourceConf.DecoHack
+func SspaiService(ctx context.Context) error {
+	feedURL := conf.FeedSourceConf.Sspai
 	if err := CommonService(ctx, Config{
-		FeedURL:      decohackFeedURL,
-		Subscription: constants.SubscriptionDecoHack,
-		BuildFunc:    buildDecohack,
+		FeedURL:      feedURL,
+		Subscription: constants.SubscriptionSspai,
+		BuildFunc:    buildSspai,
 	}); err != nil {
-		return ErrDecoHackService
+		return ErrSspaiService
 	}
 
 	return nil
 }
-func buildDecohack(feed *gofeed.Feed) (subject string, body string) {
+
+func buildSspai(feed *gofeed.Feed) (subject string, body string) {
 	subject = feed.Title
 	for _, item := range feed.Items {
 		body += fmt.Sprintf("<h1><a href=\"%s\">%s</a></h1><br>", item.Link, item.Title)
-		body += fmt.Sprintf("%s<br>", item.Content)
+		body += fmt.Sprintf("%s<br>", item.Description)
 	}
 	body = fmt.Sprintf(module, feed.Title, body)
 	return

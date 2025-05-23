@@ -1,20 +1,32 @@
 package rss
 
 import (
-	"sort"
 	"time"
 
 	"github.com/mmcdole/gofeed"
+	"github.com/weirwei/ikit/ilog"
 )
 
 func Fetch(url string) (*gofeed.Feed, error) {
 	parser := gofeed.NewParser()
-	feed, err := parser.ParseURL(url)
+
+	const maxRetries = 3
+	var feed *gofeed.Feed
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		feed, err = parser.ParseURL(url)
+		if err == nil {
+			ilog.Warnf("获取RSS失败，error: %v, retry: %d", err, i+1)
+			break
+		}
+		time.Sleep(time.Duration(5) * time.Second) // Exponential backoff
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	// 排序，时间倒序
-	sort.Sort(sort.Reverse(feed))
+	// sort.Sort(sort.Reverse(feed))
 	return feed, nil
 }
 
