@@ -1,8 +1,8 @@
 package helpers
 
 import (
-	"github.com/weirwei/rss2email/internal/conf"
-	"github.com/weirwei/rss2email/internal/email"
+	"github.com/weirwei/rss2email/conf"
+	"github.com/weirwei/rss2email/email"
 )
 
 var EmailHelper *email.Email

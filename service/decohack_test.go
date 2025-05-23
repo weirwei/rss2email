@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/weirwei/rss2email/internal/test"
+	"github.com/weirwei/rss2email/test"
 )
 
 func TestDecoHackService(t *testing.T) {

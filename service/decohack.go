@@ -8,10 +8,10 @@ import (
 
 	"github.com/mmcdole/gofeed"
 	"github.com/weirwei/ikit/ilog"
-	"github.com/weirwei/rss2email/internal/constants"
-	"github.com/weirwei/rss2email/internal/helpers"
-	"github.com/weirwei/rss2email/internal/models"
-	"github.com/weirwei/rss2email/internal/rss"
+	"github.com/weirwei/rss2email/constants"
+	"github.com/weirwei/rss2email/helpers"
+	"github.com/weirwei/rss2email/models"
+	"github.com/weirwei/rss2email/rss"
 )
 
 const (

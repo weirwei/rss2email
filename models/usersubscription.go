@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/weirwei/rss2email/internal/helpers"
+	"github.com/weirwei/rss2email/helpers"
 	"gorm.io/gorm"
 )
 

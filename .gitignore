@@ -1,1 +1,2 @@
-/internal/conf/*.yaml
+/conf/*.yaml
+!/conf/*example.yaml

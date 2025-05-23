@@ -8,8 +8,8 @@ import (
 	"runtime"
 
 	"github.com/weirwei/ikit/iutil"
-	"github.com/weirwei/rss2email/internal/conf"
-	"github.com/weirwei/rss2email/internal/helpers"
+	"github.com/weirwei/rss2email/conf"
+	"github.com/weirwei/rss2email/helpers"
 )
 
 func Init() {
