@@ -21,7 +21,8 @@ func exec() {
 	ctx := context.Background()
 	c := cron.New()
 	live(ctx, c, service.DecoHackService)
-
+	// 每周五10点开始，每3个小时请求一次
+	customize(ctx, c, "00 10/3 * * 5", service.RuanyifengService)
 	c.Start()
 	select {} // 阻塞主线程，防止退出
 }
@@ -35,6 +36,14 @@ func live(ctx context.Context, c *cron.Cron, fns ...func(ctx context.Context) er
 	if c == nil {
 		c = cron.New()
 	}
+	// ilog.Info("启动订阅...")
+	// for _, fn := range fns {
+	// 	if err := fn(ctx); err != nil {
+	// 		ilog.Errorf("订阅失败，%v", err)
+	// 	}
+	// }
+	// ilog.Info("结束启动订阅...")
+
 	// 每个小时
 	c.AddFunc("0 0 */1 * * *", func() {
 		ilog.Info("开始实时订阅...")
@@ -43,6 +52,7 @@ func live(ctx context.Context, c *cron.Cron, fns ...func(ctx context.Context) er
 				ilog.Errorf("订阅失败，%v", err)
 			}
 		}
+		ilog.Info("结束实时订阅...")
 	})
 }
 

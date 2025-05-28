@@ -3,7 +3,8 @@ package constants
 const (
 	SubscriptionTypeRss = "rss"
 
-	SubscriptionDecoHack = "decohack"
+	SubscriptionDecoHack   = "decohack"
+	SubscriptionRuanyifeng = "ruanyifeng"
 )
 
 const (

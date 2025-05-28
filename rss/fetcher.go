@@ -9,10 +9,21 @@ import (
 
 func Fetch(url string) (*gofeed.Feed, error) {
 	parser := gofeed.NewParser()
-	feed, err := parser.ParseURL(url)
+
+	const maxRetries = 3
+	var feed *gofeed.Feed
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		feed, err = parser.ParseURL(url)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(i+1) * time.Second) // Exponential backoff
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	// 排序，时间倒序
 	sort.Sort(sort.Reverse(feed))
 	return feed, nil

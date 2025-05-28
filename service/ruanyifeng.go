@@ -16,28 +16,28 @@ import (
 )
 
 const (
-	decohackFeedURL = "https://decohack.com/feed"
+	ruanyifengFeedURL = "http://feeds.feedburner.com/ruanyifeng"
 )
 
-var ErrDecoHackService = errors.New("decohack 推送失败")
+var ErrRuanyifengService = errors.New("ruanyifeng 推送失败")
 
-func DecoHackService(ctx context.Context) error {
-	ilog.Info("DecoHackService 运行中...")
-	defer ilog.Info("DecoHackService 运行结束...")
+func RuanyifengService(ctx context.Context) error {
+	ilog.Info("RuanyifengService 运行中...")
+	defer ilog.Info("RuanyifengService 运行结束...")
 	// 从数据库获取订阅信息
-	subscriptionList, err := models.NewUserSubscriptionDao().ListBySubscriptionIDAndSubscriptionType(ctx, constants.SubscriptionDecoHack, constants.SubscriptionTypeRss)
+	subscriptionList, err := models.NewUserSubscriptionDao().ListBySubscriptionIDAndSubscriptionType(ctx, constants.SubscriptionRuanyifeng, constants.SubscriptionTypeRss)
 	if err != nil {
 		ilog.Warnf("从数据库获取订阅信息 失败，%v", err)
-		return ErrDecoHackService
+		return ErrRuanyifengService
 	}
 	if len(subscriptionList) == 0 {
 		return nil
 	}
 	// 获取feed
-	feed, err := rss.Fetch(decohackFeedURL)
+	feed, err := rss.Fetch(ruanyifengFeedURL)
 	if err != nil {
 		ilog.Warnf("获取rss 失败，%v", err)
-		return ErrDecoHackService
+		return ErrRuanyifengService
 	}
 	for _, v := range subscriptionList {
 		var handler rss.UpdateCheckHandler
@@ -58,7 +58,7 @@ func DecoHackService(ctx context.Context) error {
 		f := rss.CheckUpdate(*feed, handler)
 		if len(f.Items) > 0 {
 			// 邮件样式构建
-			subject, body := buildDecoHack(&f)
+			subject, body := buildRuanyifeng(&f)
 			// 发邮件
 			err := helpers.EmailHelper.Send([]string{v.Email}, subject, body)
 			if err != nil {
@@ -84,22 +84,22 @@ func DecoHackService(ctx context.Context) error {
 	return nil
 }
 
-func buildDecoHack(feed *gofeed.Feed) (subject string, body string) {
+func buildRuanyifeng(feed *gofeed.Feed) (subject string, body string) {
 	subject = feed.Title
 	for _, item := range feed.Items {
 		body += fmt.Sprintf("<h1><a href=\"%s\">%s</a></h1><br>", item.Link, item.Title)
-		body += fmt.Sprintf("%s<br>", item.Content)
+		body += fmt.Sprintf("%s<br>", item.Description)
 	}
-	body = fmt.Sprintf(module, body)
+	body = fmt.Sprintf(ruanyifengModule, body)
 	return
 }
 
-var module = `<!DOCTYPE html>
+var ruanyifengModule = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PH今日热榜</title>
+    <title>阮一峰的网络日志</title>
     <style>
         /* 为页面主体内容创建一个容器 */
         .container {

@@ -39,7 +39,7 @@ func (u *userSubscriptionDao) Create(userSubscription *UserSubscription) error {
 func (u *userSubscriptionDao) GetByEmailAndSubscriptionIDAndSubscriptionType(ctx context.Context, email string, subscriptionID string, subscriptionType string) (*UserSubscription, error) {
 	var userSubscription UserSubscription
 	db := helpers.RSSSQLiteHelper.WithContext(ctx)
-	db.Where("email = ? AND subscription_id = ? AND subscription_type = ?", email, subscriptionID, subscriptionType)
+	db = db.Where("email = ? AND subscription_id = ? AND subscription_type = ? AND deleted = 0", email, subscriptionID, subscriptionType)
 	err := db.Take(&userSubscription).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -54,7 +54,7 @@ func (u *userSubscriptionDao) GetByEmailAndSubscriptionIDAndSubscriptionType(ctx
 func (u *userSubscriptionDao) ListBySubscriptionIDAndSubscriptionType(ctx context.Context, subscriptionID string, subscriptionType string) ([]UserSubscription, error) {
 	var userSubscriptions []UserSubscription
 	db := helpers.RSSSQLiteHelper.WithContext(ctx)
-	db.Where("subscription_id = ? AND subscription_type = ?", subscriptionID, subscriptionType)
+	db = db.Where("subscription_id = ? AND subscription_type = ? AND deleted = 0", subscriptionID, subscriptionType)
 	err := db.Find(&userSubscriptions).Error
 	if err != nil {
 		return nil, err
