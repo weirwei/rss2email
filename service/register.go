@@ -8,7 +8,7 @@ import (
 	"github.com/weirwei/rss2email/models"
 )
 
-func Register(ctx context.Context, email string, subscriptions []string) error {
+func Register(ctx context.Context, email string, subscriptions []constants.SubscriptionID) error {
 	var userSubscriptions []models.UserSubscription
 	for _, subscription := range subscriptions {
 		userSubscription := models.UserSubscription{

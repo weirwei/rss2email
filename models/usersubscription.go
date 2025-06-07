@@ -5,21 +5,22 @@ import (
 	"errors"
 	"time"
 
+	"github.com/weirwei/rss2email/constants"
 	"github.com/weirwei/rss2email/helpers"
 	"gorm.io/gorm"
 )
 
 // 用户订阅记录，记录用户和订阅的关系以及订阅进度
 type UserSubscription struct {
-	ID               uint64    `json:"id"`
-	Email            string    `json:"email"`
-	SubscriptionID   string    `json:"subscription_id"`
-	SubscriptionType string    `json:"subscription_type"`
-	Process          string    `json:"process"`
-	ProcessType      string    `json:"process_type"`
-	CreatedAt        time.Time `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt        time.Time `json:"updated_at" gorm:"autoUpdateTime"`
-	Deleted          int       `json:"deleted"`
+	ID               uint64                     `json:"id"`
+	Email            string                     `json:"email"`
+	SubscriptionID   constants.SubscriptionID   `json:"subscription_id"`
+	SubscriptionType constants.SubscriptionType `json:"subscription_type"`
+	Process          string                     `json:"process"`
+	ProcessType      constants.ProcessType      `json:"process_type"`
+	CreatedAt        time.Time                  `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt        time.Time                  `json:"updated_at" gorm:"autoUpdateTime"`
+	Deleted          int                        `json:"deleted"`
 }
 
 func (u *UserSubscription) TableName() string {
@@ -42,7 +43,7 @@ func (u *userSubscriptionDao) BatchInsert(ctx context.Context, userSubscriptions
 
 // GetByEmailAndSubscriptionIDAndSubscriptionType 根据邮箱、订阅ID和订阅类型获取用户订阅记录
 
-func (u *userSubscriptionDao) GetByEmailAndSubscriptionIDAndSubscriptionType(ctx context.Context, email string, subscriptionID string, subscriptionType string) (*UserSubscription, error) {
+func (u *userSubscriptionDao) GetByEmailAndSubscriptionIDAndSubscriptionType(ctx context.Context, email string, subscriptionID constants.SubscriptionID, subscriptionType constants.SubscriptionType) (*UserSubscription, error) {
 	var userSubscription UserSubscription
 	db := helpers.RSSSQLiteHelper.WithContext(ctx)
 	db = db.Where("email = ? AND subscription_id = ? AND subscription_type = ? AND deleted = 0", email, subscriptionID, subscriptionType)
@@ -57,7 +58,7 @@ func (u *userSubscriptionDao) GetByEmailAndSubscriptionIDAndSubscriptionType(ctx
 }
 
 // ListBySubscriptionIDAndSubscriptionType 根据订阅ID和订阅类型获取订阅列表
-func (u *userSubscriptionDao) ListBySubscriptionIDAndSubscriptionType(ctx context.Context, subscriptionID string, subscriptionType string) ([]UserSubscription, error) {
+func (u *userSubscriptionDao) ListBySubscriptionIDAndSubscriptionType(ctx context.Context, subscriptionID constants.SubscriptionID, subscriptionType constants.SubscriptionType) ([]UserSubscription, error) {
 	var userSubscriptions []UserSubscription
 	db := helpers.RSSSQLiteHelper.WithContext(ctx)
 	db = db.Where("subscription_id = ? AND subscription_type = ? AND deleted = 0", subscriptionID, subscriptionType)

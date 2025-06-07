@@ -1,20 +1,25 @@
 package constants
 
-const (
-	SubscriptionTypeRss = "rss"
+type SubscriptionID string
+type SubscriptionType string
 
-	SubscriptionDecoHack   = "decohack"
-	SubscriptionRuanyifeng = "ruanyifeng"
-	SubscriptionV2ex       = "v2ex"
+const (
+	SubscriptionTypeRss SubscriptionType = "rss"
+
+	SubscriptionDecoHack   SubscriptionID = "decohack"
+	SubscriptionRuanyifeng SubscriptionID = "ruanyifeng"
+	SubscriptionV2ex       SubscriptionID = "v2ex"
 )
 
-var AllSubscription = []string{
+var AllSubscription = []SubscriptionID{
 	SubscriptionDecoHack,
 	SubscriptionRuanyifeng,
 	SubscriptionV2ex,
 }
 
+type ProcessType string
+
 const (
-	ProcessTypeGUID = "guid"
-	ProcessTypeTime = "time"
+	ProcessTypeGUID ProcessType = "guid"
+	ProcessTypeTime ProcessType = "time"
 )

@@ -28,9 +28,12 @@ func exec() {
 	})
 	triggerAtStartUp(ctx,
 		service.RuanyifengService, // 阮一峰
-		service.DecoHackService,   // DecoHack)
+		service.DecoHackService,   // DecoHack
+		service.V2exService,       // V2EX
 	)
 	live(ctx, c, service.DecoHackService)
+	// 每天10:30
+	customize(ctx, c, "30 10 * * *", service.V2exService)
 	// 每周五10点开始，每3个小时请求一次
 	customize(ctx, c, "0 10/3 * * 5", service.RuanyifengService)
 	c.Start()
@@ -91,7 +94,7 @@ func customize(ctx context.Context, c *cron.Cron, crontab string, fns ...func(ct
 		return
 	}
 	c.AddFunc(crontab, func() {
-		ilog.Info("开始自定义订阅...")
+		ilog.Infof("开始自定义订阅...[%s]", crontab)
 		for _, fn := range fns {
 			if err := fn(ctx); err != nil {
 				ilog.Errorf("订阅失败，%v", err)

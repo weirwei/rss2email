@@ -25,11 +25,14 @@ var registerCmd = &cobra.Command{
 		}
 		var (
 			email         = args[0]
-			subscriptions = args[1:]
+			subscriptions []constants.SubscriptionID
 		)
+		for _, v := range args[1:] {
+			subscriptions = append(subscriptions, constants.SubscriptionID(v))
+		}
 		// subscription check
 		for _, subscription := range subscriptions {
-			if !slices.Contains(constants.AllSubscription, subscription) {
+			if !slices.Contains(constants.AllSubscription, constants.SubscriptionID(subscription)) {
 				cmd.Printf("subscription must be one of %v\nillegal subscription is [%s]", constants.AllSubscription, subscription)
 				return
 			}
