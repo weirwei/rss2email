@@ -1,7 +1,6 @@
 package rss
 
 import (
-	"sort"
 	"time"
 
 	"github.com/mmcdole/gofeed"
@@ -25,7 +24,7 @@ func Fetch(url string) (*gofeed.Feed, error) {
 	}
 
 	// 排序，时间倒序
-	sort.Sort(sort.Reverse(feed))
+	// sort.Sort(sort.Reverse(feed))
 	return feed, nil
 }
 
