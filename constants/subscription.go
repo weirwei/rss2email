@@ -16,6 +16,7 @@ var AllSubscription = []SubscriptionID{
 	SubscriptionDecoHack,
 	SubscriptionRuanyifeng,
 	SubscriptionV2ex,
+	SubscriptionSspai,
 }
 
 type ProcessType string

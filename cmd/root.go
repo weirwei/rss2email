@@ -30,6 +30,7 @@ func exec() {
 		service.RuanyifengService, // 阮一峰
 		service.DecoHackService,   // DecoHack
 		service.V2exService,       // V2EX
+		service.SspaiService,      // 少数派
 	)
 	live(ctx, c, service.DecoHackService)
 	// 每天10:30
