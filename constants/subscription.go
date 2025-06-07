@@ -9,6 +9,7 @@ const (
 	SubscriptionDecoHack   SubscriptionID = "decohack"
 	SubscriptionRuanyifeng SubscriptionID = "ruanyifeng"
 	SubscriptionV2ex       SubscriptionID = "v2ex"
+	SubscriptionSspai      SubscriptionID = "sspai"
 )
 
 var AllSubscription = []SubscriptionID{

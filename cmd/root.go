@@ -33,10 +33,11 @@ func exec() {
 	)
 	live(ctx, c, service.DecoHackService)
 	// 每天10:30
-	customize(ctx, c, "30 10 * * *", service.V2exService)
+	customize(ctx, c, "30 10 * * *", service.V2exService, service.SspaiService)
 	// 每周五10点开始，每3个小时请求一次
 	customize(ctx, c, "0 10/3 * * 5", service.RuanyifengService)
 	c.Start()
+	defer c.Stop()
 	select {} // 阻塞主线程，防止退出
 }
 
