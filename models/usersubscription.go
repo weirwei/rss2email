@@ -17,8 +17,8 @@ type UserSubscription struct {
 	SubscriptionType string    `json:"subscription_type"`
 	Process          string    `json:"process"`
 	ProcessType      string    `json:"process_type"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	CreatedAt        time.Time `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt        time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 	Deleted          int       `json:"deleted"`
 }
 
@@ -32,9 +32,15 @@ func NewUserSubscriptionDao() *userSubscriptionDao {
 	return &userSubscriptionDao{}
 }
 
-func (u *userSubscriptionDao) Create(userSubscription *UserSubscription) error {
-	return helpers.RSSSQLiteHelper.Create(userSubscription).Error
+func (u *userSubscriptionDao) BatchInsert(ctx context.Context, userSubscriptions []UserSubscription) error {
+	if len(userSubscriptions) == 0 {
+		return nil
+	}
+	db := helpers.RSSSQLiteHelper.WithContext(ctx)
+	return db.Create(&userSubscriptions).Error
 }
+
+// GetByEmailAndSubscriptionIDAndSubscriptionType 根据邮箱、订阅ID和订阅类型获取用户订阅记录
 
 func (u *userSubscriptionDao) GetByEmailAndSubscriptionIDAndSubscriptionType(ctx context.Context, email string, subscriptionID string, subscriptionType string) (*UserSubscription, error) {
 	var userSubscription UserSubscription
