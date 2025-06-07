@@ -1,5 +1,5 @@
 # 使用官方的 Golang 镜像作为基础镜像
-FROM golang:1.24-alpine as builder
+FROM golang:1.24-alpine AS builder
 
 ARG APP_NAME
 ENV APP_NAME=$APP_NAME
