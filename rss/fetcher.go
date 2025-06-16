@@ -17,7 +17,6 @@ func Fetch(url string) (*gofeed.Feed, error) {
 		feed, err = parser.ParseURL(url)
 		if err == nil {
 			ilog.Warnf("获取RSS失败，error: %v, retry: %d", err, i+1)
-			break
 		}
 		time.Sleep(time.Duration(5) * time.Second) // Exponential backoff
 	}

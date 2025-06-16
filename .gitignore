@@ -1,3 +1,4 @@
 /conf/yaml/*.yaml
 !/conf/yaml/*example.yaml
-/db/rss.db
+/db/*.db
+!/db/*example.db
