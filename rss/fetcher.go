@@ -20,7 +20,7 @@ func Fetch(url string) (*gofeed.Feed, error) {
 		} else {
 			break
 		}
-		time.Sleep(time.Duration(5) * time.Second) // Exponential backoff
+		time.Sleep(1 * time.Minute) // 避免过快触发
 	}
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
@@ -53,6 +54,7 @@ func triggerAtStartUp(ctx context.Context, fns ...func(ctx context.Context) erro
 		if err := fn(ctx); err != nil {
 			ilog.Errorf("订阅失败，%v", err)
 		}
+		time.Sleep(1 * time.Minute) // 避免过快触发
 	}
 	ilog.Info("结束启动订阅...")
 }
