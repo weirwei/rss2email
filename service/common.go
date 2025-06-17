@@ -39,7 +39,7 @@ func CommonService(ctx context.Context, config Config) error {
 		ilog.Warnf("获取rss 失败，%v", err)
 		return err
 	}
-
+	ilog.Infof("获取到 %d 条订阅", len(feed.Items))
 	for _, v := range subscriptionList {
 		var handler rss.UpdateCheckHandler
 		switch v.ProcessType {
