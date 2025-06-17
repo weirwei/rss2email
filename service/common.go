@@ -63,6 +63,7 @@ func CommonService(ctx context.Context, config Config) error {
 			subject, body := config.BuildFunc(&f)
 
 			// 发邮件
+			ilog.Infof("发送邮件给 %s，主题：%s", v.Email, subject)
 			err := helpers.EmailHelper.Send([]string{v.Email}, subject, body)
 			if err != nil {
 				ilog.Error(err)
@@ -82,6 +83,8 @@ func CommonService(ctx context.Context, config Config) error {
 			if err != nil {
 				ilog.Error(err)
 			}
+		} else {
+			ilog.Infof("没有新的订阅内容，跳过发送邮件给 %s, first: %s", v.Email, feed.Items[0].GUID)
 		}
 	}
 
