@@ -30,13 +30,12 @@ func exec() {
 	triggerAtStartUp(ctx,
 		service.RuanyifengService, // 阮一峰
 		service.DecoHackService,   // DecoHack
-		service.V2exService,       // V2EX
 		service.SspaiService,      // 少数派
 		service.ZhihuService,      // 知乎
 	)
 	live(ctx, c, service.DecoHackService)
 	// 每天10:30
-	customize(ctx, c, "30 10 * * *", service.V2exService, service.SspaiService, service.ZhihuService)
+	customize(ctx, c, "30 10 * * *", service.SspaiService, service.ZhihuService)
 	// 每周五10点开始，每3个小时请求一次
 	customize(ctx, c, "0 10/3 * * 5", service.RuanyifengService)
 	c.Start()
@@ -104,6 +103,7 @@ func customize(ctx context.Context, c *cron.Cron, crontab string, fns ...func(ct
 			if err := fn(ctx); err != nil {
 				ilog.Errorf("订阅失败，%v", err)
 			}
+			time.Sleep(1 * time.Minute)
 		}
 	})
 }
