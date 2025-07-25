@@ -11,6 +11,8 @@ const (
 	SubscriptionV2ex       SubscriptionID = "v2ex"
 	SubscriptionSspai      SubscriptionID = "sspai"
 	SubscriptionZhihu      SubscriptionID = "zhihu"
+	SubscriptionKitekagi   SubscriptionID = "kitekagi"
+	SubscriptionKitekagiAI SubscriptionID = "kitekagi-ai"
 )
 
 var AllSubscription = []SubscriptionID{
@@ -19,6 +21,8 @@ var AllSubscription = []SubscriptionID{
 	SubscriptionV2ex,
 	SubscriptionSspai,
 	SubscriptionZhihu,
+	SubscriptionKitekagi,
+	SubscriptionKitekagiAI,
 }
 
 type ProcessType string

@@ -32,10 +32,14 @@ func exec() {
 		service.DecoHackService,   // DecoHack
 		service.SspaiService,      // 少数派
 		service.ZhihuService,      // 知乎
+		service.KitekagiService,   // Kitekagi 世界
+		service.KitekagiAIService, // Kitekagi 人工智能
 	)
 	live(ctx, c, service.DecoHackService)
 	// 每天10:30
 	customize(ctx, c, "30 10 * * *", service.SspaiService, service.ZhihuService)
+	// 每天12:30
+	customize(ctx, c, "30 12 * * *", service.KitekagiService, service.KitekagiAIService)
 	// 每周五10点开始，每3个小时请求一次
 	customize(ctx, c, "0 10/3 * * 5", service.RuanyifengService)
 	c.Start()

@@ -1,6 +1,7 @@
 # rss2email
 
 
+
 ## 问题
 
 > rsshub 是海外的，国内无法访问
@@ -73,4 +74,8 @@ async function handleRequest(request) {
 ```
 
 > rsshub 会报 http 429 too many request
+
+> cloudflare 代理 rsshub 被网关拦住了 2025-07-25
+
+最后使用本地部署的策略，发现部署后的开销意外的小。不过只是做了一个最基本的部署，外加一个自动更新，先用一段时间看看效果
 

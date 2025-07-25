@@ -10,6 +10,8 @@ type FeedSourceConfig struct {
 	Sspai      string `yaml:"sspai"`
 	V2ex       string `yaml:"v2ex"`
 	Zhihu      string `yaml:"zhihu"`
+	Kitekagi   string `yaml:"kitekagi"`
+	KitekagiAI string `yaml:"kitekagi-ai"`
 }
 
 func FeedSourceInit() {
