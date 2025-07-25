@@ -2,3 +2,4 @@
 !/conf/yaml/*example.yaml
 /db/*.db
 !/db/*example.db
+.claude
