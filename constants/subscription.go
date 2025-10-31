@@ -6,13 +6,14 @@ type SubscriptionType string
 const (
 	SubscriptionTypeRss SubscriptionType = "rss"
 
-	SubscriptionDecoHack   SubscriptionID = "decohack"
-	SubscriptionRuanyifeng SubscriptionID = "ruanyifeng"
-	SubscriptionV2ex       SubscriptionID = "v2ex"
-	SubscriptionSspai      SubscriptionID = "sspai"
-	SubscriptionZhihu      SubscriptionID = "zhihu"
-	SubscriptionKitekagi   SubscriptionID = "kitekagi"
-	SubscriptionKitekagiAI SubscriptionID = "kitekagi-ai"
+	SubscriptionDecoHack       SubscriptionID = "decohack"
+	SubscriptionRuanyifeng     SubscriptionID = "ruanyifeng"
+	SubscriptionV2ex           SubscriptionID = "v2ex"
+	SubscriptionSspai          SubscriptionID = "sspai"
+	SubscriptionZhihu          SubscriptionID = "zhihu"
+	SubscriptionKitekagi       SubscriptionID = "kitekagi"
+	SubscriptionKitekagiAI     SubscriptionID = "kitekagi-ai"
+	SubscriptionAIInsightDaily SubscriptionID = "ai-insight-daily"
 )
 
 var AllSubscription = []SubscriptionID{
@@ -23,6 +24,7 @@ var AllSubscription = []SubscriptionID{
 	SubscriptionZhihu,
 	SubscriptionKitekagi,
 	SubscriptionKitekagiAI,
+	SubscriptionAIInsightDaily,
 }
 
 type ProcessType string

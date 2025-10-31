@@ -29,16 +29,17 @@ func exec() {
 		ilog.Info("active")
 	})
 	triggerAtStartUp(ctx,
-		service.RuanyifengService, // 阮一峰
-		service.DecoHackService,   // DecoHack
-		service.SspaiService,      // 少数派
-		service.ZhihuService,      // 知乎
-		service.KitekagiService,   // Kitekagi 世界
-		service.KitekagiAIService, // Kitekagi 人工智能
+		service.RuanyifengService,     // 阮一峰
+		service.DecoHackService,       // DecoHack
+		service.SspaiService,          // 少数派
+		service.ZhihuService,          // 知乎
+		service.KitekagiService,       // Kitekagi 世界
+		service.KitekagiAIService,     // Kitekagi 人工智能
+		service.AIInsightDailyService, // AI洞察日报
 	)
 	live(ctx, c, service.DecoHackService)
 	// 每天10:30
-	customize(ctx, c, "30 10 * * *", service.SspaiService, service.ZhihuService)
+	customize(ctx, c, "30 10 * * *", service.SspaiService, service.ZhihuService, service.AIInsightDailyService)
 	// 每天12:30
 	customize(ctx, c, "30 12 * * *", service.KitekagiService, service.KitekagiAIService)
 	// 每周五10点开始，每3个小时请求一次
@@ -66,15 +67,15 @@ func triggerAtStartUp(ctx context.Context, fns ...func(ctx context.Context) erro
 // exponentialBackoffRetry 使用指数退避策略重试函数调用
 func exponentialBackoffRetry(ctx context.Context, fn func(ctx context.Context) error) error {
 	const (
-		initialDelay = 1 * time.Second  // 初始延迟1秒
-		maxDelay     = 5 * time.Minute  // 最大延迟5分钟
-		maxRetries   = 5                // 最大重试次数
-		multiplier   = 2.0              // 指数增长因子
-		jitter       = 0.1              // 抖动因子
+		initialDelay = 1 * time.Second // 初始延迟1秒
+		maxDelay     = 5 * time.Minute // 最大延迟5分钟
+		maxRetries   = 5               // 最大重试次数
+		multiplier   = 2.0             // 指数增长因子
+		jitter       = 0.1             // 抖动因子
 	)
-	
+
 	delay := initialDelay
-	
+
 	for i := 0; i <= maxRetries; i++ {
 		// 检查上下文是否已取消
 		select {
@@ -82,22 +83,22 @@ func exponentialBackoffRetry(ctx context.Context, fn func(ctx context.Context) e
 			return ctx.Err()
 		default:
 		}
-		
+
 		// 执行函数
 		err := fn(ctx)
 		if err == nil {
 			// 成功执行，返回nil
 			return nil
 		}
-		
+
 		// 如果是最后一次重试，返回错误
 		if i == maxRetries {
 			return err
 		}
-		
+
 		// 记录重试信息
 		ilog.Warnf("函数执行失败，将在 %v 后进行第 %d 次重试: %v", delay, i+1, err)
-		
+
 		// 等待退避时间或上下文取消
 		select {
 		case <-time.After(delay):
@@ -114,7 +115,7 @@ func exponentialBackoffRetry(ctx context.Context, fn func(ctx context.Context) e
 			return ctx.Err()
 		}
 	}
-	
+
 	return nil
 }
 

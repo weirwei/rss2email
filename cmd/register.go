@@ -17,7 +17,7 @@ var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]
 
 var registerCmd = &cobra.Command{
 	Use:   "register",
-	Short: "db exec",
+	Short: "register subscription, example: rss2email register your-email@example.com ruanyifeng sspai zhihu",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) <= 1 {
 			cmd.Help()
