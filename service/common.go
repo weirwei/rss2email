@@ -84,7 +84,11 @@ func CommonService(ctx context.Context, config Config) error {
 				ilog.Error(err)
 			}
 		} else {
-			ilog.Infof("没有新的订阅内容，跳过发送邮件给 %s, first: %s", v.Email, feed.Items[0].GUID)
+			firstGUID := ""
+			if len(feed.Items) > 0 {
+				firstGUID = feed.Items[0].GUID
+			}
+			ilog.Infof("没有新的订阅内容，跳过发送邮件给 %s, first: %s", v.Email, firstGUID)
 		}
 	}
 

@@ -3,3 +3,4 @@
 /db/*.db
 !/db/*example.db
 .claude
+.spec-workflow
