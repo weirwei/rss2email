@@ -4,3 +4,8 @@
 !/db/*example.db
 .claude
 .spec-workflow
+
+# Gas Town (added by gt)
+.runtime/
+.beads/
+.logs/
