@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package models
 
 import (
@@ -13,7 +16,7 @@ func TestGetByEmailAndSubscriptionIDAndSubscriptionType(t *testing.T) {
 	ctx := test.NewCtx()
 	t.Run("succ", func(t *testing.T) {
 		dao := NewUserSubscriptionDao()
-		res, err := dao.GetByEmailAndSubscriptionIDAndSubscriptionType(ctx, "weirwei@qq.com", constants.SubscriptionRuanyifeng, constants.SubscriptionTypeRss)
+		res, err := dao.GetByEmailAndSubscriptionIDAndSubscriptionType(ctx, "weirwei@qq.com", constants.SubscriptionID("ruanyifeng"), constants.SubscriptionTypeRss)
 		if err != nil {
 			t.Fatal(err.Error())
 		} else if res == nil {
@@ -28,7 +31,7 @@ func TestListBySubscriptionIDAndSubscriptionType(t *testing.T) {
 	ctx := test.NewCtx()
 	t.Run("success", func(t *testing.T) {
 		dao := NewUserSubscriptionDao()
-		res, err := dao.ListBySubscriptionIDAndSubscriptionType(ctx, constants.SubscriptionRuanyifeng, constants.SubscriptionTypeRss)
+		res, err := dao.ListBySubscriptionIDAndSubscriptionType(ctx, constants.SubscriptionID("ruanyifeng"), constants.SubscriptionTypeRss)
 		if err != nil {
 			t.Fatal(err.Error())
 		} else if len(res) == 0 {

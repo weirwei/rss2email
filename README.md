@@ -11,7 +11,7 @@ RSS2Email 是一个用 Go 编写的 RSS 订阅服务，可以定期获取 RSS �
 - 避免重复发送已处理的内容
 - 支持 Docker 部署
 
-## 支持的 RSS 源
+## RSS 源示例
 
 - 阮一峰周刊 (ruanyifeng)
 - DecoHack (decohack)
@@ -143,8 +143,12 @@ VALUES ("ruanyifeng", "阮一峰周刊", "https://www.ruanyifeng.com/blog/atom.x
 
 ### 添加新的 RSS 源
 
-1. 在 `constants/subscription.go` 中添加新的订阅源 ID（用于服务入口）
-2. 在 `feed_sources` 表中添加 RSS 源 URL 与调度信息
+只需在 `feed_sources` 表中添加 RSS 源 URL 与调度信息，服务会自动加载并调度，不需要改代码。
+
+### 测试说明
+
+- 默认测试：`go test ./...`，仅运行稳定单元测试。
+- 集成测试：依赖本地 DB 表和外部 RSS，建议通过 build tag 单独运行。
 
 ## 问题记录
 
