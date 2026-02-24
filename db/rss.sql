@@ -8,10 +8,10 @@ CREATE TABLE `user_subscriptions` (
     `created_at` datetime,
     `updated_at` datetime,
     `deleted` integer
-)
+);
 
-CREATE UNIQUE INDEX uni_email_subscription ON user_subscriptions(email, subscription_id, subscription_type)
-CREATE INDEX idx_subscription ON user_subscriptions(subscription_id)
+CREATE UNIQUE INDEX uni_email_subscription ON user_subscriptions(email, subscription_id, subscription_type);
+CREATE INDEX idx_subscription ON user_subscriptions(subscription_id);
 
 CREATE TABLE `feed_sources` (
     `id` integer PRIMARY KEY AUTOINCREMENT,
@@ -24,6 +24,6 @@ CREATE TABLE `feed_sources` (
     `created_at` datetime,
     `updated_at` datetime,
     `deleted` integer
-)
+);
 
-CREATE UNIQUE INDEX uni_feed_source_subscription ON feed_sources(subscription_id)
+CREATE UNIQUE INDEX uni_feed_source_subscription ON feed_sources(subscription_id);
