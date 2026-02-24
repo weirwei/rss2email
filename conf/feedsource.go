@@ -1,20 +1,3 @@
 package conf
 
-import "github.com/weirwei/ikit/iutil"
-
-var FeedSourceConf FeedSourceConfig
-
-type FeedSourceConfig struct {
-	DecoHack       string `yaml:"decohack"`
-	Ruanyifeng     string `yaml:"ruanyifeng"`
-	Sspai          string `yaml:"sspai"`
-	V2ex           string `yaml:"v2ex"`
-	Zhihu          string `yaml:"zhihu"`
-	Kitekagi       string `yaml:"kitekagi"`
-	KitekagiAI     string `yaml:"kitekagi-ai"`
-	AIInsightDaily string `yaml:"ai-insight-daily"`
-}
-
-func FeedSourceInit() {
-	iutil.LoadYaml("yaml/feedsource.yaml", "conf", &FeedSourceConf)
-}
+// RSS 源配置已迁移到数据库 feed_sources 表

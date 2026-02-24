@@ -67,13 +67,13 @@ pass: your-password
 
 ### RSS 源配置
 
-在 `conf/yaml/feedsource.yaml` 文件中配置 RSS 源
+RSS 源与调度从数据库读取，需先写入 `feed_sources` 表。
 
-推荐结合 rsshub 进行配置
+手动插入示例：
 
-```yaml
-decohack: https://decohack.com/feed
-ruanyifeng: https://www.ruanyifeng.com/blog/atom.xml
+```sql
+INSERT INTO feed_sources (subscription_id, name, feed_url, content_field, schedule_type, cron_spec, created_at, updated_at, deleted)
+VALUES ("ruanyifeng", "阮一峰周刊", "https://www.ruanyifeng.com/blog/atom.xml", "description", "cron", "0 10/3 * * 5", datetime('now'), datetime('now'), 0);
 ```
 
 ## 使用方法
@@ -86,7 +86,19 @@ ruanyifeng: https://www.ruanyifeng.com/blog/atom.xml
 ./rss2email register your-email@example.com ruanyifeng sspai zhihu
 ```
 
-支持的订阅源包括：`ruanyifeng`, `decohack`, `sspai`, `zhihu`, `kitekagi`, `kitekagi-ai`
+支持的订阅源以 `feed_sources` 表为准。
+
+### 添加订阅源
+
+```bash
+./rss2email add-feed <subscription_id> <feed_url> <name> [content_field] [schedule_type] [cron_spec]
+```
+
+示例：
+
+```bash
+./rss2email add-feed ruanyifeng https://www.ruanyifeng.com/blog/atom.xml "阮一峰周刊" description cron "0 10/3 * * 5"
+```
 
 ### 启动服务
 
@@ -98,12 +110,11 @@ ruanyifeng: https://www.ruanyifeng.com/blog/atom.xml
 
 ## 定时任务
 
-服务使用 cron 表达式来配置定时任务：
+服务从数据库读取调度策略：
 
-- 阮一峰周刊：每周五10点开始，每3小时抓取一次
-- 少数派和知乎：每天10:30抓取
-- Kitekagi 系列：每天12:30抓取
-- DecoHack：每小时抓取一次
+- `schedule_type=startup`：启动时执行一次
+- `schedule_type=live`：每小时执行一次
+- `schedule_type=cron`：按 `cron_spec` 执行
 
 ## 数据库
 
@@ -111,6 +122,7 @@ ruanyifeng: https://www.ruanyifeng.com/blog/atom.xml
 
 表结构：
 - `user_subscriptions`：存储用户订阅信息和处理进度
+- `feed_sources`：存储 RSS 源配置
 
 ## 开发
 
@@ -131,10 +143,8 @@ ruanyifeng: https://www.ruanyifeng.com/blog/atom.xml
 
 ### 添加新的 RSS 源
 
-1. 在 `constants/subscription.go` 中添加新的订阅源 ID
-2. 在 `conf/yaml/feedsource.yaml` 中添加 RSS 源 URL
-3. 在 `service/` 目录下创建新的服务文件
-4. 在 `cmd/root.go` 中添加定时任务调度
+1. 在 `constants/subscription.go` 中添加新的订阅源 ID（用于服务入口）
+2. 在 `feed_sources` 表中添加 RSS 源 URL 与调度信息
 
 ## 问题记录
 

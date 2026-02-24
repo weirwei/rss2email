@@ -58,18 +58,16 @@ go test ./...
 
 ## Database Schema
 
-The application uses SQLite with a single table:
+The application uses SQLite tables:
 - `user_subscriptions`: Tracks user email subscriptions and processing state
+- `feed_sources`: Stores RSS feed sources, content field, and schedule config
 
 ## Configuration Files
 
 Configuration files are in `conf/yaml/`:
-- `feedsource.yaml`: RSS feed URLs for different sources
 - `email.yaml`: Email server configuration
 
 ## Adding New RSS Sources
 
 1. Add the source to `constants/subscription.go`
-2. Add the feed URL to `conf/yaml/feedsource.yaml`
-3. Create a new service file in `service/` following the pattern of existing services
-4. Add the service to the scheduling in `cmd/root.go`
+2. Insert feed info and schedule into `feed_sources` table (or use `rss2email add-feed`)

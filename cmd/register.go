@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"regexp"
-	"slices"
 
 	"github.com/spf13/cobra"
 	"github.com/weirwei/rss2email/constants"
+	"github.com/weirwei/rss2email/models"
 	"github.com/weirwei/rss2email/service"
 )
 
@@ -32,8 +32,13 @@ var registerCmd = &cobra.Command{
 		}
 		// subscription check
 		for _, subscription := range subscriptions {
-			if !slices.Contains(constants.AllSubscription, constants.SubscriptionID(subscription)) {
-				cmd.Printf("subscription must be one of %v\nillegal subscription is [%s]", constants.AllSubscription, subscription)
+			exists, err := models.NewFeedSourceDao().ExistsBySubscriptionID(cmd.Context(), subscription)
+			if err != nil {
+				cmd.Printf("subscription check failed, %v\n", err)
+				return
+			}
+			if !exists {
+				cmd.Printf("subscription [%s] not exists in feed_sources\n", subscription)
 				return
 			}
 		}

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/mmcdole/gofeed"
-	"github.com/weirwei/rss2email/conf"
 	"github.com/weirwei/rss2email/constants"
+	"github.com/weirwei/rss2email/models"
 )
 
 // ContentField specifies which field to use from feed items for email body
@@ -19,64 +19,29 @@ const (
 	UseContent
 )
 
-// ServiceConfig holds the configuration for an RSS service
-type ServiceConfig struct {
-	Name         string
-	Subscription constants.SubscriptionID
-	GetFeedURL   func() string
-	ContentField ContentField
+func contentFieldFromDB(value constants.FeedContentField) ContentField {
+	switch value {
+	case constants.FeedContentFieldContent:
+		return UseContent
+	case constants.FeedContentFieldDescription:
+		return UseDescription
+	default:
+		return UseDescription
+	}
 }
 
-// registry maps subscription IDs to their configurations
-var registry = map[constants.SubscriptionID]ServiceConfig{
-	constants.SubscriptionRuanyifeng: {
-		Name:         "ruanyifeng",
-		Subscription: constants.SubscriptionRuanyifeng,
-		GetFeedURL:   func() string { return conf.FeedSourceConf.Ruanyifeng },
-		ContentField: UseDescription,
-	},
-	constants.SubscriptionDecoHack: {
-		Name:         "decohack",
-		Subscription: constants.SubscriptionDecoHack,
-		GetFeedURL:   func() string { return conf.FeedSourceConf.DecoHack },
-		ContentField: UseContent,
-	},
-	constants.SubscriptionSspai: {
-		Name:         "sspai",
-		Subscription: constants.SubscriptionSspai,
-		GetFeedURL:   func() string { return conf.FeedSourceConf.Sspai },
-		ContentField: UseDescription,
-	},
-	constants.SubscriptionZhihu: {
-		Name:         "zhihu",
-		Subscription: constants.SubscriptionZhihu,
-		GetFeedURL:   func() string { return conf.FeedSourceConf.Zhihu },
-		ContentField: UseDescription,
-	},
-	constants.SubscriptionV2ex: {
-		Name:         "v2ex",
-		Subscription: constants.SubscriptionV2ex,
-		GetFeedURL:   func() string { return conf.FeedSourceConf.V2ex },
-		ContentField: UseDescription,
-	},
-	constants.SubscriptionKitekagi: {
-		Name:         "kitekagi",
-		Subscription: constants.SubscriptionKitekagi,
-		GetFeedURL:   func() string { return conf.FeedSourceConf.Kitekagi },
-		ContentField: UseDescription,
-	},
-	constants.SubscriptionKitekagiAI: {
-		Name:         "kitekagi-ai",
-		Subscription: constants.SubscriptionKitekagiAI,
-		GetFeedURL:   func() string { return conf.FeedSourceConf.KitekagiAI },
-		ContentField: UseDescription,
-	},
-	constants.SubscriptionAIInsightDaily: {
-		Name:         "ai-insight-daily",
-		Subscription: constants.SubscriptionAIInsightDaily,
-		GetFeedURL:   func() string { return conf.FeedSourceConf.AIInsightDaily },
-		ContentField: UseContent,
-	},
+func BuildConfigFromFeedSource(feedSource *models.FeedSource) (Config, error) {
+	if feedSource == nil {
+		return Config{}, fmt.Errorf("feed source is nil")
+	}
+	contentField := contentFieldFromDB(feedSource.ContentField)
+	return Config{
+		FeedURL:      feedSource.FeedURL,
+		Subscription: feedSource.Subscription,
+		BuildFunc: func(feed *gofeed.Feed) (string, string) {
+			return buildEmail(feed, contentField)
+		},
+	}, nil
 }
 
 // buildEmail creates email subject and body from a feed using the specified content field
@@ -97,18 +62,18 @@ func buildEmail(feed *gofeed.Feed, contentField ContentField) (subject string, b
 
 // RunService executes the service for the given subscription ID
 func RunService(ctx context.Context, subscriptionID constants.SubscriptionID) error {
-	cfg, ok := registry[subscriptionID]
-	if !ok {
+	feedSource, err := models.NewFeedSourceDao().GetBySubscriptionID(ctx, subscriptionID)
+	if err != nil {
+		return err
+	}
+	if feedSource == nil {
 		return fmt.Errorf("unknown subscription: %s", subscriptionID)
 	}
-
-	return CommonService(ctx, Config{
-		FeedURL:      cfg.GetFeedURL(),
-		Subscription: cfg.Subscription,
-		BuildFunc: func(feed *gofeed.Feed) (string, string) {
-			return buildEmail(feed, cfg.ContentField)
-		},
-	})
+	config, err := BuildConfigFromFeedSource(feedSource)
+	if err != nil {
+		return err
+	}
+	return CommonService(ctx, config)
 }
 
 // GetServiceFunc returns a service function for the given subscription ID.

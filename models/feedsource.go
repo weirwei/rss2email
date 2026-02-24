@@ -1,0 +1,98 @@
+package models
+
+import (
+	"context"
+	"errors"
+	"time"
+
+	"github.com/weirwei/rss2email/constants"
+	"github.com/weirwei/rss2email/helpers"
+	"gorm.io/gorm"
+)
+
+// FeedSource RSS 源配置
+type FeedSource struct {
+	ID           uint64                     `json:"id"`
+	Subscription constants.SubscriptionID   `json:"subscription_id"`
+	Name         string                     `json:"name"`
+	FeedURL      string                     `json:"feed_url"`
+	ContentField constants.FeedContentField `json:"content_field"`
+	ScheduleType constants.ScheduleType     `json:"schedule_type"`
+	CronSpec     string                     `json:"cron_spec"`
+	CreatedAt    time.Time                  `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt    time.Time                  `json:"updated_at" gorm:"autoUpdateTime"`
+	Deleted      int                        `json:"deleted"`
+}
+
+func (f *FeedSource) TableName() string {
+	return "feed_sources"
+}
+
+type feedSourceDao struct{}
+
+func NewFeedSourceDao() *feedSourceDao {
+	return &feedSourceDao{}
+}
+
+// GetBySubscriptionID 根据订阅ID获取订阅源配置
+func (f *feedSourceDao) GetBySubscriptionID(ctx context.Context, subscriptionID constants.SubscriptionID) (*FeedSource, error) {
+	var feedSource FeedSource
+	db := helpers.RSSSQLiteHelper.WithContext(ctx)
+	db = db.Where("subscription_id = ? AND deleted = 0", subscriptionID)
+	err := db.Take(&feedSource).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &feedSource, nil
+}
+
+// ExistsBySubscriptionID 判断订阅源是否存在
+func (f *feedSourceDao) ExistsBySubscriptionID(ctx context.Context, subscriptionID constants.SubscriptionID) (bool, error) {
+	var count int64
+	db := helpers.RSSSQLiteHelper.WithContext(ctx)
+	err := db.Model(&FeedSource{}).
+		Where("subscription_id = ? AND deleted = 0", subscriptionID).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// ListAll 获取所有订阅源
+func (f *feedSourceDao) ListAll(ctx context.Context) ([]FeedSource, error) {
+	var feedSources []FeedSource
+	db := helpers.RSSSQLiteHelper.WithContext(ctx)
+	err := db.Where("deleted = 0").Find(&feedSources).Error
+	if err != nil {
+		return nil, err
+	}
+	return feedSources, nil
+}
+
+// Upsert 根据订阅ID插入或更新订阅源
+func (f *feedSourceDao) Upsert(ctx context.Context, feedSource *FeedSource) error {
+	if feedSource == nil {
+		return nil
+	}
+	existing, err := f.GetBySubscriptionID(ctx, feedSource.Subscription)
+	if err != nil {
+		return err
+	}
+	db := helpers.RSSSQLiteHelper.WithContext(ctx)
+	if existing == nil {
+		return db.Create(feedSource).Error
+	}
+	updates := map[string]interface{}{
+		"name":          feedSource.Name,
+		"feed_url":      feedSource.FeedURL,
+		"content_field": feedSource.ContentField,
+		"schedule_type": feedSource.ScheduleType,
+		"cron_spec":     feedSource.CronSpec,
+		"updated_at":    time.Now(),
+	}
+	return db.Model(&FeedSource{}).Where("id = ?", existing.ID).Updates(updates).Error
+}
