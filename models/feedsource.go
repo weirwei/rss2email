@@ -12,16 +12,16 @@ import (
 
 // FeedSource RSS 源配置
 type FeedSource struct {
-	ID           uint64                     `json:"id"`
-	Subscription constants.SubscriptionID   `json:"subscription_id"`
-	Name         string                     `json:"name"`
-	FeedURL      string                     `json:"feed_url"`
-	ContentField constants.FeedContentField `json:"content_field"`
-	ScheduleType constants.ScheduleType     `json:"schedule_type"`
-	CronSpec     string                     `json:"cron_spec"`
-	CreatedAt    time.Time                  `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt    time.Time                  `json:"updated_at" gorm:"autoUpdateTime"`
-	Deleted      int                        `json:"deleted"`
+	ID           uint64                     `json:"id" gorm:"column:id;primaryKey;autoIncrement"`
+	Subscription constants.SubscriptionID   `json:"subscription_id" gorm:"column:subscription_id"`
+	Name         string                     `json:"name" gorm:"column:name"`
+	FeedURL      string                     `json:"feed_url" gorm:"column:feed_url"`
+	ContentField constants.FeedContentField `json:"content_field" gorm:"column:content_field"`
+	ScheduleType constants.ScheduleType     `json:"schedule_type" gorm:"column:schedule_type"`
+	CronSpec     string                     `json:"cron_spec" gorm:"column:cron_spec"`
+	CreatedAt    time.Time                  `json:"created_at" gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt    time.Time                  `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
+	Deleted      int                        `json:"deleted" gorm:"column:deleted"`
 }
 
 func (f *FeedSource) TableName() string {

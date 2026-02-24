@@ -12,15 +12,15 @@ import (
 
 // 用户订阅记录，记录用户和订阅的关系以及订阅进度
 type UserSubscription struct {
-	ID               uint64                     `json:"id"`
-	Email            string                     `json:"email"`
-	SubscriptionID   constants.SubscriptionID   `json:"subscription_id"`
-	SubscriptionType constants.SubscriptionType `json:"subscription_type"`
-	Process          string                     `json:"process"`
-	ProcessType      constants.ProcessType      `json:"process_type"`
-	CreatedAt        time.Time                  `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt        time.Time                  `json:"updated_at" gorm:"autoUpdateTime"`
-	Deleted          int                        `json:"deleted"`
+	ID               uint64                     `json:"id" gorm:"column:id;primaryKey;autoIncrement"`
+	Email            string                     `json:"email" gorm:"column:email"`
+	SubscriptionID   constants.SubscriptionID   `json:"subscription_id" gorm:"column:subscription_id"`
+	SubscriptionType constants.SubscriptionType `json:"subscription_type" gorm:"column:subscription_type"`
+	Process          string                     `json:"process" gorm:"column:process"`
+	ProcessType      constants.ProcessType      `json:"process_type" gorm:"column:process_type"`
+	CreatedAt        time.Time                  `json:"created_at" gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt        time.Time                  `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
+	Deleted          int                        `json:"deleted" gorm:"column:deleted"`
 }
 
 func (u *UserSubscription) TableName() string {
