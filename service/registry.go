@@ -39,6 +39,7 @@ func BuildConfigFromFeedSource(feedSource *models.FeedSource) (Config, error) {
 	}
 	contentField := contentFieldFromDB(feedSource.ContentField)
 	translationCfg := conf.TranslationConf
+	applyFeedLanguagePolicy(&translationCfg, strings.TrimSpace(feedSource.Language), feedSource.Subscription)
 	translator := newTranslator(translationCfg)
 	return Config{
 		FeedURL:      feedSource.FeedURL,
@@ -47,6 +48,33 @@ func BuildConfigFromFeedSource(feedSource *models.FeedSource) (Config, error) {
 			return buildEmail(feed, contentField, translator, translationCfg)
 		},
 	}, nil
+}
+
+func applyFeedLanguagePolicy(cfg *conf.TranslationConfig, feedLanguage string, subscription constants.SubscriptionID) {
+	if cfg == nil || !cfg.Enabled {
+		return
+	}
+	language := strings.ToLower(strings.TrimSpace(feedLanguage))
+	if language == "" || language == "auto" {
+		return
+	}
+	if !cfg.OnlyTranslateEng {
+		ilog.Infof("feed language policy ignored (only_translate_english=false), subscription=%s language=%s", subscription, language)
+		return
+	}
+	if strings.HasPrefix(language, "en") {
+		// Explicit source language en: bypass text-level English detection
+		// to avoid HTML tag noise or mixed content causing misclassification.
+		cfg.OnlyTranslateEng = false
+		if strings.TrimSpace(cfg.SourceLang) == "" || strings.EqualFold(strings.TrimSpace(cfg.SourceLang), "auto") {
+			cfg.SourceLang = "en"
+		}
+		ilog.Infof("feed language policy applied: force translate for english feed, subscription=%s language=%s", subscription, language)
+		return
+	}
+	cfg.TranslateTitle = false
+	cfg.TranslateContent = false
+	ilog.Infof("feed language policy applied: skip translation for non-english feed, subscription=%s language=%s", subscription, language)
 }
 
 // buildEmail creates email subject and body from a feed using the specified content field

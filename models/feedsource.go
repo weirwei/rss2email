@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/weirwei/rss2email/constants"
@@ -16,6 +17,7 @@ type FeedSource struct {
 	Subscription constants.SubscriptionID   `json:"subscription_id" gorm:"column:subscription_id"`
 	Name         string                     `json:"name" gorm:"column:name"`
 	FeedURL      string                     `json:"feed_url" gorm:"column:feed_url"`
+	Language     string                     `json:"language" gorm:"column:language"`
 	ContentField constants.FeedContentField `json:"content_field" gorm:"column:content_field"`
 	ScheduleType constants.ScheduleType     `json:"schedule_type" gorm:"column:schedule_type"`
 	CronSpec     string                     `json:"cron_spec" gorm:"column:cron_spec"`
@@ -83,7 +85,10 @@ func (f *feedSourceDao) Upsert(ctx context.Context, feedSource *FeedSource) erro
 	err := db.Where("subscription_id = ?", feedSource.Subscription).Take(&existing).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return db.Create(feedSource).Error
+			if f.hasLanguageColumn(ctx) {
+				return db.Create(feedSource).Error
+			}
+			return db.Omit("language").Create(feedSource).Error
 		}
 		return err
 	}
@@ -96,6 +101,9 @@ func (f *feedSourceDao) Upsert(ctx context.Context, feedSource *FeedSource) erro
 		"deleted":       0,
 		"updated_at":    time.Now(),
 	}
+	if f.hasLanguageColumn(ctx) {
+		updates["language"] = feedSource.Language
+	}
 	return db.Model(&FeedSource{}).Where("id = ?", existing.ID).Updates(updates).Error
 }
 
@@ -103,6 +111,9 @@ func (f *feedSourceDao) Upsert(ctx context.Context, feedSource *FeedSource) erro
 func (f *feedSourceDao) UpdateByID(ctx context.Context, id uint64, data map[string]interface{}) error {
 	if id == 0 || len(data) == 0 {
 		return nil
+	}
+	if !f.hasLanguageColumn(ctx) {
+		delete(data, "language")
 	}
 	return helpers.RSSSQLiteHelper.WithContext(ctx).
 		Model(&FeedSource{}).
@@ -119,4 +130,29 @@ func (f *feedSourceDao) SoftDeleteByID(ctx context.Context, id uint64) error {
 			"deleted":    1,
 			"updated_at": time.Now(),
 		}).Error
+}
+
+func (f *feedSourceDao) hasLanguageColumn(ctx context.Context) bool {
+	rows, err := helpers.RSSSQLiteHelper.WithContext(ctx).Raw("PRAGMA table_info(feed_sources)").Rows()
+	if err != nil {
+		return false
+	}
+	defer rows.Close()
+	var (
+		cid       int
+		name      string
+		colType   string
+		notnull   int
+		dfltValue any
+		pk        int
+	)
+	for rows.Next() {
+		if err = rows.Scan(&cid, &name, &colType, &notnull, &dfltValue, &pk); err != nil {
+			continue
+		}
+		if strings.EqualFold(name, "language") {
+			return true
+		}
+	}
+	return false
 }

@@ -18,6 +18,7 @@ CREATE TABLE `feed_sources` (
     `subscription_id` text,
     `name` text,
     `feed_url` text,
+    `language` text,
     `content_field` text,
     `schedule_type` text,
     `cron_spec` text,

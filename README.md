@@ -125,13 +125,13 @@ llm:
 ### 添加订阅源
 
 ```bash
-./rss2email add-feed <subscription_id> <feed_url> <name> [content_field] [schedule_type] [cron_spec]
+./rss2email add-feed <subscription_id> <feed_url> <name> [content_field] [schedule_type] [cron_spec] [language]
 ```
 
 示例：
 
 ```bash
-./rss2email add-feed ruanyifeng https://www.ruanyifeng.com/blog/atom.xml "阮一峰周刊" description cron "0 10/3 * * 5"
+./rss2email add-feed ruanyifeng https://www.ruanyifeng.com/blog/atom.xml "阮一峰周刊" description cron "0 10/3 * * 5" en
 ```
 
 ### 启动服务

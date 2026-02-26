@@ -131,9 +131,10 @@ func reconcileSchedules(ctx context.Context, c *cron.Cron, feedSources []models.
 }
 
 func scheduleSignature(feedSource models.FeedSource) string {
-	return fmt.Sprintf("%s|%s|%s|%s|%s",
+	return fmt.Sprintf("%s|%s|%s|%s|%s|%s",
 		feedSource.Subscription,
 		feedSource.FeedURL,
+		strings.TrimSpace(feedSource.Language),
 		feedSource.ContentField,
 		normalizeScheduleType(feedSource.ScheduleType),
 		strings.TrimSpace(feedSource.CronSpec),

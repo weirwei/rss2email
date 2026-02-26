@@ -13,7 +13,7 @@ func init() {
 }
 
 var addFeedCmd = &cobra.Command{
-	Use:   "add-feed <subscription_id> <feed_url> <name> [content_field] [schedule_type] [cron_spec]",
+	Use:   "add-feed <subscription_id> <feed_url> <name> [content_field] [schedule_type] [cron_spec] [language]",
 	Short: "add or update feed source",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 3 {
@@ -26,6 +26,7 @@ var addFeedCmd = &cobra.Command{
 		contentField := constants.FeedContentFieldDescription
 		scheduleType := constants.ScheduleTypeLive
 		cronSpec := ""
+		language := "auto"
 		if len(args) >= 4 {
 			contentField = constants.FeedContentField(strings.ToLower(strings.TrimSpace(args[3])))
 		}
@@ -34,6 +35,9 @@ var addFeedCmd = &cobra.Command{
 		}
 		if len(args) >= 6 {
 			cronSpec = strings.TrimSpace(args[5])
+		}
+		if len(args) >= 7 {
+			language = normalizeFeedLanguage(strings.TrimSpace(args[6]))
 		}
 		if subscriptionID == "" || feedURL == "" || name == "" {
 			cmd.Printf("subscription_id, feed_url, name cannot be empty\n")
@@ -51,10 +55,14 @@ var addFeedCmd = &cobra.Command{
 			cmd.Printf("cron_spec required when schedule_type is cron\n")
 			return
 		}
+		if language == "" {
+			language = "auto"
+		}
 		feedSource := &models.FeedSource{
 			Subscription: subscriptionID,
 			Name:         name,
 			FeedURL:      feedURL,
+			Language:     language,
 			ContentField: contentField,
 			ScheduleType: scheduleType,
 			CronSpec:     cronSpec,
@@ -66,4 +74,12 @@ var addFeedCmd = &cobra.Command{
 		}
 		cmd.Printf("add feed success, subscription: %s\n", subscriptionID)
 	},
+}
+
+func normalizeFeedLanguage(language string) string {
+	lang := strings.ToLower(strings.TrimSpace(language))
+	if lang == "" {
+		return "auto"
+	}
+	return lang
 }

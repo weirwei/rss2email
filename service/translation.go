@@ -36,24 +36,12 @@ type httpTranslator struct {
 
 func newTranslator(cfg conf.TranslationConfig) Translator {
 	if !cfg.Enabled {
-		ilog.Infof("translation disabled, use noop translator")
 		return noopTranslator{}
 	}
 	timeout := time.Duration(cfg.TimeoutSeconds) * time.Second
 	if timeout <= 0 {
 		timeout = 15 * time.Second
 	}
-	ilog.Infof(
-		"translation enabled provider=%s source=%s target=%s timeout=%s only_english=%t title=%t content=%t append=%t",
-		strings.ToLower(strings.TrimSpace(cfg.Provider)),
-		cfg.SourceLang,
-		cfg.TargetLang,
-		timeout.String(),
-		cfg.OnlyTranslateEng,
-		cfg.TranslateTitle,
-		cfg.TranslateContent,
-		cfg.AppendTranslated,
-	)
 	return &httpTranslator{
 		client: &http.Client{Timeout: timeout},
 		cfg:    cfg,
@@ -92,7 +80,7 @@ func looksEnglish(text string) bool {
 		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
 			letters++
 		}
-		if letters >= 3 {
+		if letters >= 30 {
 			return true
 		}
 	}

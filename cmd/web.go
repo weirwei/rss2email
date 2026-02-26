@@ -53,6 +53,7 @@ type feedFormData struct {
 	Subscription string
 	Name         string
 	FeedURL      string
+	Language     string
 	ContentField string
 	ScheduleType string
 	CronSpec     string
@@ -92,6 +93,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	feedForm := feedFormData{
+		Language:     "auto",
 		ContentField: string(constants.FeedContentFieldDescription),
 		ScheduleType: string(constants.ScheduleTypeLive),
 	}
@@ -114,6 +116,7 @@ func handleFeedSourceUpsert(w http.ResponseWriter, r *http.Request) {
 	subscriptionID := constants.SubscriptionID(strings.TrimSpace(r.FormValue("subscription_id")))
 	name := strings.TrimSpace(r.FormValue("name"))
 	feedURL := strings.TrimSpace(r.FormValue("feed_url"))
+	language := normalizeFeedLanguage(strings.TrimSpace(r.FormValue("language")))
 	contentField := constants.FeedContentField(strings.ToLower(strings.TrimSpace(r.FormValue("content_field"))))
 	scheduleType := constants.ScheduleType(strings.ToLower(strings.TrimSpace(r.FormValue("schedule_type"))))
 	cronSpec := strings.TrimSpace(r.FormValue("cron_spec"))
@@ -125,6 +128,9 @@ func handleFeedSourceUpsert(w http.ResponseWriter, r *http.Request) {
 	}
 	if contentField == "" {
 		contentField = constants.FeedContentFieldDescription
+	}
+	if language == "" {
+		language = "auto"
 	}
 	if scheduleType == "" {
 		scheduleType = constants.ScheduleTypeLive
@@ -154,6 +160,7 @@ func handleFeedSourceUpsert(w http.ResponseWriter, r *http.Request) {
 			"subscription_id": subscriptionID,
 			"name":            name,
 			"feed_url":        feedURL,
+			"language":        language,
 			"content_field":   contentField,
 			"schedule_type":   scheduleType,
 			"cron_spec":       cronSpec,
@@ -171,6 +178,7 @@ func handleFeedSourceUpsert(w http.ResponseWriter, r *http.Request) {
 		Subscription: subscriptionID,
 		Name:         name,
 		FeedURL:      feedURL,
+		Language:     language,
 		ContentField: contentField,
 		ScheduleType: scheduleType,
 		CronSpec:     cronSpec,
@@ -506,6 +514,10 @@ const dashboardTpl = `<!doctype html>
             <input id="feed_url" name="feed_url" value="{{.FeedForm.FeedURL}}" required />
           </div>
           <div class="field">
+            <label for="feed_language">Language</label>
+            <input id="feed_language" name="language" value="{{.FeedForm.Language}}" placeholder="auto/en/zh" />
+          </div>
+          <div class="field">
             <label for="feed_content_field">Content Field</label>
             <select id="feed_content_field" name="content_field">
               <option value="description" {{if eq .FeedForm.ContentField "description"}}selected{{end}}>description</option>
@@ -535,7 +547,7 @@ const dashboardTpl = `<!doctype html>
         <table>
           <thead>
             <tr>
-              <th>ID</th><th>Subscription</th><th>Name</th><th>Feed URL</th><th>Content</th><th>Schedule</th><th>Cron Spec</th><th>Created</th><th>Updated</th><th class="action-col">Action</th>
+              <th>ID</th><th>Subscription</th><th>Name</th><th>Feed URL</th><th>Language</th><th>Content</th><th>Schedule</th><th>Cron Spec</th><th>Created</th><th>Updated</th><th class="action-col">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -550,6 +562,9 @@ const dashboardTpl = `<!doctype html>
               </td>
               <td>
                 <input class="row-input mono feed-row-input feed-row-{{.ID}}" name="feed_url" form="feed-row-form-{{.ID}}" value="{{.FeedURL}}" disabled required />
+              </td>
+              <td>
+                <input class="row-input mono feed-row-input feed-row-{{.ID}}" name="language" form="feed-row-form-{{.ID}}" value="{{.Language}}" disabled />
               </td>
               <td>
                 <select class="row-input feed-row-input feed-row-{{.ID}}" name="content_field" form="feed-row-form-{{.ID}}" disabled>
@@ -584,7 +599,7 @@ const dashboardTpl = `<!doctype html>
               </td>
             </tr>
             {{else}}
-            <tr><td colspan="10">暂无数据</td></tr>
+            <tr><td colspan="11">暂无数据</td></tr>
             {{end}}
           </tbody>
         </table>

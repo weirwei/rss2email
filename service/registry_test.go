@@ -51,12 +51,24 @@ func TestBuildEmailWithTranslation(t *testing.T) {
 	})
 
 	t.Run("replace translation", func(t *testing.T) {
-		_, body := buildEmail(feed, UseDescription, fakeTranslator{prefix: "中文:"}, conf.TranslationConfig{
+		translationCfg := conf.TranslationConfig{
 			Enabled:          true,
 			TranslateTitle:   true,
 			TranslateContent: true,
 			AppendTranslated: false,
-		})
+			TimeoutSeconds:   60,
+			LLM: conf.LLMTranslateConfig{
+				Endpoint:         "https://api.ofox.ai/v1/chat/completions",
+				APIKey:           "sk-of-MQLEKQdwcmqANvshmFFPiBODcOslyztrpeVrZxVMCQXfaNSZpNQXxXWsvjiBBaiD",
+				Model:            "moonshotai/kimi-k2.5",
+				Temperature:      1,
+				SystemPrompt:     "You are a translation engine. Translate the user text from English to Simplified Chinese. Only return the translated text. Keep URLs and markdown unchanged.",
+				AdditionalPrompt: "",
+			},
+			Provider:         "llm",
+			OnlyTranslateEng: true,
+		}
+		_, body := buildEmail(feed, UseDescription, newTranslator(translationCfg), translationCfg)
 		if strings.Contains(body, "English Title（中文:English Title）") {
 			t.Fatalf("unexpected appended title in body: %s", body)
 		}
