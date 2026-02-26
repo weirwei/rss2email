@@ -78,13 +78,14 @@ func (f *feedSourceDao) Upsert(ctx context.Context, feedSource *FeedSource) erro
 	if feedSource == nil {
 		return nil
 	}
-	existing, err := f.GetBySubscriptionID(ctx, feedSource.Subscription)
-	if err != nil {
-		return err
-	}
+	var existing FeedSource
 	db := helpers.RSSSQLiteHelper.WithContext(ctx)
-	if existing == nil {
-		return db.Create(feedSource).Error
+	err := db.Where("subscription_id = ?", feedSource.Subscription).Take(&existing).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return db.Create(feedSource).Error
+		}
+		return err
 	}
 	updates := map[string]interface{}{
 		"name":          feedSource.Name,
@@ -92,7 +93,30 @@ func (f *feedSourceDao) Upsert(ctx context.Context, feedSource *FeedSource) erro
 		"content_field": feedSource.ContentField,
 		"schedule_type": feedSource.ScheduleType,
 		"cron_spec":     feedSource.CronSpec,
+		"deleted":       0,
 		"updated_at":    time.Now(),
 	}
 	return db.Model(&FeedSource{}).Where("id = ?", existing.ID).Updates(updates).Error
+}
+
+// UpdateByID 根据主键更新订阅源
+func (f *feedSourceDao) UpdateByID(ctx context.Context, id uint64, data map[string]interface{}) error {
+	if id == 0 || len(data) == 0 {
+		return nil
+	}
+	return helpers.RSSSQLiteHelper.WithContext(ctx).
+		Model(&FeedSource{}).
+		Where("id = ?", id).
+		Updates(data).Error
+}
+
+// SoftDeleteByID 软删除订阅源
+func (f *feedSourceDao) SoftDeleteByID(ctx context.Context, id uint64) error {
+	return helpers.RSSSQLiteHelper.WithContext(ctx).
+		Model(&FeedSource{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"deleted":    1,
+			"updated_at": time.Now(),
+		}).Error
 }
