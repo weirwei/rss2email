@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mmcdole/gofeed"
+	"github.com/weirwei/rss2email/conf"
 	"github.com/weirwei/rss2email/constants"
 	"github.com/weirwei/rss2email/models"
 )
@@ -35,26 +36,47 @@ func BuildConfigFromFeedSource(feedSource *models.FeedSource) (Config, error) {
 		return Config{}, fmt.Errorf("feed source is nil")
 	}
 	contentField := contentFieldFromDB(feedSource.ContentField)
+	translationCfg := conf.TranslationConf
+	translator := newTranslator(translationCfg)
 	return Config{
 		FeedURL:      feedSource.FeedURL,
 		Subscription: feedSource.Subscription,
 		BuildFunc: func(feed *gofeed.Feed) (string, string) {
-			return buildEmail(feed, contentField)
+			return buildEmail(feed, contentField, translator, translationCfg)
 		},
 	}, nil
 }
 
 // buildEmail creates email subject and body from a feed using the specified content field
-func buildEmail(feed *gofeed.Feed, contentField ContentField) (subject string, body string) {
+func buildEmail(feed *gofeed.Feed, contentField ContentField, translator Translator, translationCfg conf.TranslationConfig) (subject string, body string) {
 	subject = feed.Title
 	for _, item := range feed.Items {
-		body += fmt.Sprintf("<h1><a href=\"%s\">%s</a></h1><br>", item.Link, item.Title)
+		itemTitle := item.Title
+		if translationCfg.Enabled && translationCfg.TranslateTitle {
+			translatedTitle := safeTranslate(translator, item.Title)
+			if translationCfg.AppendTranslated && translatedTitle != item.Title {
+				itemTitle = fmt.Sprintf("%s（%s）", item.Title, translatedTitle)
+			} else {
+				itemTitle = translatedTitle
+			}
+		}
+		body += fmt.Sprintf("<h1><a href=\"%s\">%s</a></h1><br>", item.Link, itemTitle)
+
+		originalContent := item.Description
 		switch contentField {
 		case UseContent:
-			body += fmt.Sprintf("%s<br>", item.Content)
-		default:
-			body += fmt.Sprintf("%s<br>", item.Description)
+			originalContent = item.Content
 		}
+		if !translationCfg.Enabled || !translationCfg.TranslateContent {
+			body += fmt.Sprintf("%s<br>", originalContent)
+			continue
+		}
+		translatedContent := safeTranslate(translator, originalContent)
+		if translationCfg.AppendTranslated && translatedContent != originalContent {
+			body += fmt.Sprintf("%s<br><hr><div><strong>中文翻译：</strong></div>%s<br>", originalContent, translatedContent)
+			continue
+		}
+		body += fmt.Sprintf("%s<br>", translatedContent)
 	}
 	body = fmt.Sprintf(module, feed.Title, body)
 	return

@@ -1,0 +1,39 @@
+enabled: false
+
+# 可选: none/google/microsoft/baidu/llm
+provider: none
+
+source_lang: en
+target_lang: zh-CN
+timeout_seconds: 15
+
+# 只翻译看起来是英文的内容
+only_translate_english: true
+
+# 翻译标题和正文
+translate_title: true
+translate_content: true
+
+# true: 保留原文并追加中文；false: 直接替换为中文
+append_translated: true
+
+google:
+  api_key: ""
+
+microsoft:
+  endpoint: https://api.cognitive.microsofttranslator.com
+  api_key: ""
+  region: ""
+
+baidu:
+  app_id: ""
+  app_secret: ""
+
+llm:
+  # OpenAI 兼容接口
+  endpoint: https://api.openai.com/v1/chat/completions
+  api_key: ""
+  model: gpt-4o-mini
+  temperature: 1
+  system_prompt: You are a translation engine. Translate the user text from English to Simplified Chinese. Only return the translated text. Keep URLs and markdown unchanged.
+  additional_prompt: ""

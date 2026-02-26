@@ -76,6 +76,40 @@ INSERT INTO feed_sources (subscription_id, name, feed_url, content_field, schedu
 VALUES ("ruanyifeng", "阮一峰周刊", "https://www.ruanyifeng.com/blog/atom.xml", "description", "cron", "0 10/3 * * 5", datetime('now'), datetime('now'), 0);
 ```
 
+### 翻译配置（英文转中文）
+
+复制示例配置并按需填写：
+
+```bash
+cp conf/yaml/translation.example.yaml conf/yaml/translation.yaml
+```
+
+关键配置：
+
+- `enabled`：是否启用翻译
+- `provider`：`google` / `microsoft` / `baidu` / `llm`
+- `source_lang` / `target_lang`：默认 `en -> zh-CN`
+- `only_translate_english`：只翻译看起来是英文的内容
+- `append_translated`：
+  - `true`：保留原文并追加中文翻译
+  - `false`：直接替换为中文
+
+示例（使用大模型翻译）：
+
+```yaml
+enabled: true
+provider: llm
+source_lang: en
+target_lang: zh-CN
+only_translate_english: true
+append_translated: true
+llm:
+  endpoint: https://api.openai.com/v1/chat/completions
+  api_key: sk-xxxx
+  model: gpt-4o-mini
+  temperature: 0
+```
+
 ## 使用方法
 
 ### 订阅 RSS 源
