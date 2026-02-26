@@ -9,15 +9,17 @@ import (
 var TranslationConf TranslationConfig
 
 type TranslationConfig struct {
-	Enabled          bool   `yaml:"enabled"`
-	Provider         string `yaml:"provider"`
-	SourceLang       string `yaml:"source_lang"`
-	TargetLang       string `yaml:"target_lang"`
-	TimeoutSeconds   int    `yaml:"timeout_seconds"`
-	OnlyTranslateEng bool   `yaml:"only_translate_english"`
-	TranslateTitle   bool   `yaml:"translate_title"`
-	TranslateContent bool   `yaml:"translate_content"`
-	AppendTranslated bool   `yaml:"append_translated"`
+	Enabled             bool   `yaml:"enabled"`
+	Provider            string `yaml:"provider"`
+	SourceLang          string `yaml:"source_lang"`
+	TargetLang          string `yaml:"target_lang"`
+	TimeoutSeconds      int    `yaml:"timeout_seconds"`
+	MaxItemsPerPush     int    `yaml:"max_items_per_push"`
+	MaxTextCharsPerPush int    `yaml:"max_text_chars_per_push"`
+	OnlyTranslateEng    bool   `yaml:"only_translate_english"`
+	TranslateTitle      bool   `yaml:"translate_title"`
+	TranslateContent    bool   `yaml:"translate_content"`
+	AppendTranslated    bool   `yaml:"append_translated"`
 
 	Google    GoogleTranslateConfig    `yaml:"google"`
 	Microsoft MicrosoftTranslateConfig `yaml:"microsoft"`
@@ -51,15 +53,17 @@ type LLMTranslateConfig struct {
 
 func defaultTranslationConfig() TranslationConfig {
 	return TranslationConfig{
-		Enabled:          false,
-		Provider:         "none",
-		SourceLang:       "en",
-		TargetLang:       "zh-CN",
-		TimeoutSeconds:   15,
-		OnlyTranslateEng: true,
-		TranslateTitle:   true,
-		TranslateContent: true,
-		AppendTranslated: true,
+		Enabled:             false,
+		Provider:            "none",
+		SourceLang:          "en",
+		TargetLang:          "zh-CN",
+		TimeoutSeconds:      15,
+		MaxItemsPerPush:     10,
+		MaxTextCharsPerPush: 30000,
+		OnlyTranslateEng:    true,
+		TranslateTitle:      true,
+		TranslateContent:    true,
+		AppendTranslated:    true,
 		Microsoft: MicrosoftTranslateConfig{
 			Endpoint: "https://api.cognitive.microsofttranslator.com",
 		},

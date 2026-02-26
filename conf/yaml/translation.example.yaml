@@ -6,6 +6,10 @@ provider: none
 source_lang: en
 target_lang: zh-CN
 timeout_seconds: 15
+# 单次推送最多处理多少条 item（用于控制翻译成本）
+max_items_per_push: 10
+# 单次推送最多处理多少字符（按标题+正文原文累计）
+max_text_chars_per_push: 30000
 
 # 只翻译看起来是英文的内容
 only_translate_english: true
