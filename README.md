@@ -143,7 +143,7 @@ VALUES ("ruanyifeng", "阮一峰周刊", "https://www.ruanyifeng.com/blog/atom.x
 
 ### 添加新的 RSS 源
 
-只需在 `feed_sources` 表中添加 RSS 源 URL 与调度信息，服务会自动加载并调度，不需要改代码。
+只需在 `feed_sources` 表中添加 RSS 源 URL 与调度信息，服务会自动加载并调度，不需要改代码。运行中会按分钟级轮询 `feed_sources` 并增量重载（新增/修改/删除都可生效）。
 
 ### 测试说明
 

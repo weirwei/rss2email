@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
@@ -27,7 +28,7 @@ func exec() {
 		ilog.Info("active")
 	})
 	service.RunAllByDB(ctx)
-	service.ScheduleFromDB(ctx, c)
+	service.ScheduleFromDBDynamic(ctx, c, time.Minute)
 	c.Start()
 	defer c.Stop()
 	select {} // 阻塞主线程，防止退出

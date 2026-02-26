@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"time"
 
@@ -12,6 +13,23 @@ import (
 	"github.com/weirwei/rss2email/constants"
 	"github.com/weirwei/rss2email/models"
 )
+
+const defaultFeedSourceReloadInterval = time.Minute
+
+type scheduledFeed struct {
+	entryID   cron.EntryID
+	signature string
+}
+
+type scheduleState struct {
+	entries map[uint64]scheduledFeed
+}
+
+func newScheduleState() *scheduleState {
+	return &scheduleState{
+		entries: make(map[uint64]scheduledFeed),
+	}
+}
 
 // RunAllByDB executes all feed sources from database once.
 func RunAllByDB(ctx context.Context) {
@@ -39,23 +57,94 @@ func ScheduleFromDB(ctx context.Context, c *cron.Cron) {
 	if c == nil {
 		return
 	}
-	feedSources, err := models.NewFeedSourceDao().ListAll(ctx)
-	if err != nil {
-		logScheduleError("list feed_sources failed", err)
+	reconcileSchedules(ctx, c, nil, newScheduleState())
+}
+
+// ScheduleFromDBDynamic polls feed_sources and applies incremental schedule changes without restarting the process.
+func ScheduleFromDBDynamic(ctx context.Context, c *cron.Cron, reloadInterval time.Duration) {
+	if c == nil {
 		return
 	}
-	for _, feedSource := range feedSources {
-		scheduleType := feedSource.ScheduleType
-		if scheduleType == "" {
-			scheduleType = constants.ScheduleTypeLive
+	if reloadInterval <= 0 {
+		reloadInterval = defaultFeedSourceReloadInterval
+	}
+	state := newScheduleState()
+	reconcileSchedules(ctx, c, nil, state)
+	spec := "@every " + reloadInterval.String()
+	if _, err := c.AddFunc(spec, func() {
+		reconcileSchedules(ctx, c, nil, state)
+	}); err != nil {
+		logScheduleError(fmt.Sprintf("register feed_sources reloader failed [%s]", spec), err)
+	}
+}
+
+func reconcileSchedules(ctx context.Context, c *cron.Cron, feedSources []models.FeedSource, state *scheduleState) {
+	if c == nil || state == nil {
+		return
+	}
+	if feedSources == nil {
+		var err error
+		feedSources, err = models.NewFeedSourceDao().ListAll(ctx)
+		if err != nil {
+			logScheduleError("list feed_sources failed", err)
+			return
 		}
+	}
+	next := make(map[uint64]scheduledFeed, len(feedSources))
+	// Keep a deterministic order for clearer logs and stable tests.
+	sort.Slice(feedSources, func(i, j int) bool {
+		return feedSources[i].ID < feedSources[j].ID
+	})
+	for _, feedSource := range feedSources {
+		if feedSource.ID == 0 {
+			logScheduleError(fmt.Sprintf("skip feed_source with invalid id [%s]", feedSource.Subscription), nil)
+			continue
+		}
+		scheduleType := normalizeScheduleType(feedSource.ScheduleType)
 		config, err := BuildConfigFromFeedSource(&feedSource)
 		if err != nil {
 			logScheduleError(fmt.Sprintf("build config failed [%s]", feedSource.Subscription), err)
 			continue
 		}
-		addSchedule(ctx, c, config, scheduleType, feedSource.CronSpec)
+		signature := scheduleSignature(feedSource)
+		if current, ok := state.entries[feedSource.ID]; ok && current.signature == signature {
+			next[feedSource.ID] = current
+			continue
+		}
+		if current, ok := state.entries[feedSource.ID]; ok {
+			c.Remove(current.entryID)
+		}
+		entryID, ok := addSchedule(ctx, c, config, scheduleType, feedSource.CronSpec)
+		if ok {
+			next[feedSource.ID] = scheduledFeed{
+				entryID:   entryID,
+				signature: signature,
+			}
+		}
 	}
+	for id, current := range state.entries {
+		if _, ok := next[id]; !ok {
+			c.Remove(current.entryID)
+		}
+	}
+	state.entries = next
+}
+
+func scheduleSignature(feedSource models.FeedSource) string {
+	return fmt.Sprintf("%s|%s|%s|%s|%s",
+		feedSource.Subscription,
+		feedSource.FeedURL,
+		feedSource.ContentField,
+		normalizeScheduleType(feedSource.ScheduleType),
+		strings.TrimSpace(feedSource.CronSpec),
+	)
+}
+
+func normalizeScheduleType(scheduleType constants.ScheduleType) constants.ScheduleType {
+	if scheduleType == "" {
+		return constants.ScheduleTypeLive
+	}
+	return scheduleType
 }
 
 // exponentialBackoffRetry 使用指数退避策略重试函数调用
@@ -113,34 +202,44 @@ func exponentialBackoffRetry(ctx context.Context, fn func(ctx context.Context) e
 	return nil
 }
 
-func addSchedule(ctx context.Context, c *cron.Cron, config Config, scheduleType constants.ScheduleType, cronSpec string) {
+func addSchedule(ctx context.Context, c *cron.Cron, config Config, scheduleType constants.ScheduleType, cronSpec string) (cron.EntryID, bool) {
 	switch scheduleType {
 	case constants.ScheduleTypeStartup:
-		return
+		return 0, false
 	case constants.ScheduleTypeCron:
 		spec := strings.TrimSpace(cronSpec)
 		if spec == "" {
 			logScheduleError(fmt.Sprintf("cron spec empty [%s]", config.Subscription), nil)
-			return
+			return 0, false
 		}
 		if _, err := cron.ParseStandard(spec); err != nil {
 			logScheduleError(fmt.Sprintf("cron spec invalid [%s]", config.Subscription), err)
-			return
+			return 0, false
 		}
-		c.AddFunc(spec, func() {
+		entryID, err := c.AddFunc(spec, func() {
 			ilog.Infof("开始自定义订阅...[%s]", spec)
 			if err := CommonService(ctx, config); err != nil {
 				logScheduleError(fmt.Sprintf("cron run failed [%s]", config.Subscription), err)
 			}
 			time.Sleep(1 * time.Minute)
 		})
+		if err != nil {
+			logScheduleError(fmt.Sprintf("register cron failed [%s]", config.Subscription), err)
+			return 0, false
+		}
+		return entryID, true
 	default:
-		c.AddFunc("0 */1 * * *", func() {
+		entryID, err := c.AddFunc("0 */1 * * *", func() {
 			ilog.Info("开始实时订阅...")
 			if err := CommonService(ctx, config); err != nil {
 				logScheduleError(fmt.Sprintf("live run failed [%s]", config.Subscription), err)
 			}
 		})
+		if err != nil {
+			logScheduleError(fmt.Sprintf("register live failed [%s]", config.Subscription), err)
+			return 0, false
+		}
+		return entryID, true
 	}
 }
 
