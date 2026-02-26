@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/md5"
@@ -35,12 +36,24 @@ type httpTranslator struct {
 
 func newTranslator(cfg conf.TranslationConfig) Translator {
 	if !cfg.Enabled {
+		ilog.Infof("translation disabled, use noop translator")
 		return noopTranslator{}
 	}
 	timeout := time.Duration(cfg.TimeoutSeconds) * time.Second
 	if timeout <= 0 {
 		timeout = 15 * time.Second
 	}
+	ilog.Infof(
+		"translation enabled provider=%s source=%s target=%s timeout=%s only_english=%t title=%t content=%t append=%t",
+		strings.ToLower(strings.TrimSpace(cfg.Provider)),
+		cfg.SourceLang,
+		cfg.TargetLang,
+		timeout.String(),
+		cfg.OnlyTranslateEng,
+		cfg.TranslateTitle,
+		cfg.TranslateContent,
+		cfg.AppendTranslated,
+	)
 	return &httpTranslator{
 		client: &http.Client{Timeout: timeout},
 		cfg:    cfg,
@@ -50,12 +63,16 @@ func newTranslator(cfg conf.TranslationConfig) Translator {
 func (t *httpTranslator) Translate(text string) (string, error) {
 	trimmed := strings.TrimSpace(text)
 	if trimmed == "" {
+		ilog.Infof("translation skip: empty text")
 		return text, nil
 	}
 	if t.cfg.OnlyTranslateEng && !looksEnglish(trimmed) {
+		ilog.Infof("translation skip: text not detected as english, preview=%q", previewText(trimmed, 80))
 		return text, nil
 	}
-	switch strings.ToLower(strings.TrimSpace(t.cfg.Provider)) {
+	provider := strings.ToLower(strings.TrimSpace(t.cfg.Provider))
+	ilog.Infof("translation request provider=%s chars=%d preview=%q", provider, len(trimmed), previewText(trimmed, 80))
+	switch provider {
 	case "google":
 		return t.translateByGoogle(trimmed)
 	case "microsoft", "azure":
@@ -228,6 +245,12 @@ func (t *httpTranslator) translateByBaidu(text string) (string, error) {
 }
 
 func (t *httpTranslator) translateByLLM(text string) (string, error) {
+	// LLM translation uses single-shot streaming only:
+	// no fallback to non-stream mode and no retry on failure.
+	return t.translateByLLMStream(text)
+}
+
+func (t *httpTranslator) translateByLLMStream(text string) (string, error) {
 	endpoint := strings.TrimSpace(t.cfg.LLM.Endpoint)
 	apiKey := strings.TrimSpace(t.cfg.LLM.APIKey)
 	model := strings.TrimSpace(t.cfg.LLM.Model)
@@ -249,6 +272,7 @@ func (t *httpTranslator) translateByLLM(text string) (string, error) {
 			{"role": "user", "content": userText},
 		},
 		"temperature": t.cfg.LLM.Temperature,
+		"stream":      true,
 	}
 	data, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, bytes.NewReader(data))
@@ -257,32 +281,107 @@ func (t *httpTranslator) translateByLLM(text string) (string, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Accept", "text/event-stream")
 	resp, err := t.client.Do(req)
 	if err != nil {
 		return text, err
 	}
 	defer resp.Body.Close()
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return text, err
-	}
 	if resp.StatusCode >= 300 {
-		return text, fmt.Errorf("llm translate http status: %d", resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		if len(bodyBytes) > 0 {
+			return text, fmt.Errorf("llm stream http status: %d body=%s", resp.StatusCode, previewText(string(bodyBytes), 160))
+		}
+		return text, fmt.Errorf("llm stream http status: %d", resp.StatusCode)
 	}
-	var parsed struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
+	scanner := bufio.NewScanner(resp.Body)
+	scanner.Buffer(make([]byte, 0, 64*1024), 2*1024*1024)
+	var builder strings.Builder
+	var eventData []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+
+		// SSE event terminator: blank line.
+		if trimmed == "" {
+			if len(eventData) == 0 {
+				continue
+			}
+			raw := strings.TrimSpace(strings.Join(eventData, "\n"))
+			eventData = eventData[:0]
+			if raw == "" {
+				continue
+			}
+			if raw == "[DONE]" {
+				break
+			}
+			var chunk struct {
+				Choices []struct {
+					Delta struct {
+						Content string `json:"content"`
+					} `json:"delta"`
+					Message struct {
+						Content string `json:"content"`
+					} `json:"message"`
+				} `json:"choices"`
+			}
+			if err := json.Unmarshal([]byte(raw), &chunk); err != nil {
+				continue
+			}
+			if len(chunk.Choices) == 0 {
+				continue
+			}
+			part := chunk.Choices[0].Delta.Content
+			if strings.TrimSpace(part) == "" {
+				part = chunk.Choices[0].Message.Content
+			}
+			if part != "" {
+				builder.WriteString(part)
+			}
+			continue
+		}
+
+		// SSE comment line, ignore.
+		if strings.HasPrefix(trimmed, ":") {
+			continue
+		}
+		// We only care about `data:` lines and allow multi-line data payloads.
+		if strings.HasPrefix(trimmed, "data:") {
+			eventData = append(eventData, strings.TrimSpace(strings.TrimPrefix(trimmed, "data:")))
+		}
 	}
-	if err = json.Unmarshal(bodyBytes, &parsed); err != nil {
+	if err := scanner.Err(); err != nil {
 		return text, err
 	}
-	if len(parsed.Choices) == 0 || strings.TrimSpace(parsed.Choices[0].Message.Content) == "" {
-		return text, nil
+	if len(eventData) > 0 {
+		raw := strings.TrimSpace(strings.Join(eventData, "\n"))
+		if raw != "" && raw != "[DONE]" {
+			var chunk struct {
+				Choices []struct {
+					Delta struct {
+						Content string `json:"content"`
+					} `json:"delta"`
+					Message struct {
+						Content string `json:"content"`
+					} `json:"message"`
+				} `json:"choices"`
+			}
+			if err := json.Unmarshal([]byte(raw), &chunk); err == nil && len(chunk.Choices) > 0 {
+				part := chunk.Choices[0].Delta.Content
+				if strings.TrimSpace(part) == "" {
+					part = chunk.Choices[0].Message.Content
+				}
+				if part != "" {
+					builder.WriteString(part)
+				}
+			}
+		}
 	}
-	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
+	translated := strings.TrimSpace(builder.String())
+	if translated == "" {
+		return text, fmt.Errorf("llm stream empty content")
+	}
+	return translated, nil
 }
 
 func normalizeBaiduTargetLang(target string) string {
@@ -304,7 +403,25 @@ func safeTranslate(t Translator, text string) string {
 		return text
 	}
 	if strings.TrimSpace(translated) == "" {
+		ilog.Warnf("translate returned empty content, fallback to source text")
 		return text
 	}
+	if translated == text {
+		ilog.Infof("translate unchanged, preview=%q", previewText(text, 80))
+	} else {
+		ilog.Infof("translate success src=%q dst=%q", previewText(text, 60), previewText(translated, 60))
+	}
 	return translated
+}
+
+func previewText(text string, max int) string {
+	if max <= 0 {
+		max = 80
+	}
+	compact := strings.Join(strings.Fields(strings.TrimSpace(text)), " ")
+	runes := []rune(compact)
+	if len(runes) <= max {
+		return compact
+	}
+	return string(runes[:max]) + "..."
 }

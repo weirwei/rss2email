@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mmcdole/gofeed"
+	"github.com/weirwei/ikit/ilog"
 	"github.com/weirwei/rss2email/conf"
 	"github.com/weirwei/rss2email/constants"
 	"github.com/weirwei/rss2email/models"
@@ -50,6 +51,15 @@ func BuildConfigFromFeedSource(feedSource *models.FeedSource) (Config, error) {
 // buildEmail creates email subject and body from a feed using the specified content field
 func buildEmail(feed *gofeed.Feed, contentField ContentField, translator Translator, translationCfg conf.TranslationConfig) (subject string, body string) {
 	subject = feed.Title
+	ilog.Infof(
+		"build email start title=%q items=%d content_field=%d translation_enabled=%t title=%t content=%t",
+		feed.Title,
+		len(feed.Items),
+		contentField,
+		translationCfg.Enabled,
+		translationCfg.TranslateTitle,
+		translationCfg.TranslateContent,
+	)
 	for _, item := range feed.Items {
 		itemTitle := item.Title
 		if translationCfg.Enabled && translationCfg.TranslateTitle {
@@ -79,6 +89,7 @@ func buildEmail(feed *gofeed.Feed, contentField ContentField, translator Transla
 		body += fmt.Sprintf("%s<br>", translatedContent)
 	}
 	body = fmt.Sprintf(module, feed.Title, body)
+	ilog.Infof("build email done title=%q body_chars=%d", feed.Title, len(body))
 	return
 }
 
