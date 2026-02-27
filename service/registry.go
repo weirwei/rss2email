@@ -59,7 +59,6 @@ func applyFeedLanguagePolicy(cfg *conf.TranslationConfig, feedLanguage string, s
 		return
 	}
 	if !cfg.OnlyTranslateEng {
-		ilog.Infof("feed language policy ignored (only_translate_english=false), subscription=%s language=%s", subscription, language)
 		return
 	}
 	if strings.HasPrefix(language, "en") {
@@ -69,12 +68,10 @@ func applyFeedLanguagePolicy(cfg *conf.TranslationConfig, feedLanguage string, s
 		if strings.TrimSpace(cfg.SourceLang) == "" || strings.EqualFold(strings.TrimSpace(cfg.SourceLang), "auto") {
 			cfg.SourceLang = "en"
 		}
-		ilog.Infof("feed language policy applied: force translate for english feed, subscription=%s language=%s", subscription, language)
 		return
 	}
 	cfg.TranslateTitle = false
 	cfg.TranslateContent = false
-	ilog.Infof("feed language policy applied: skip translation for non-english feed, subscription=%s language=%s", subscription, language)
 }
 
 // buildEmail creates email subject and body from a feed using the specified content field
