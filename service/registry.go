@@ -111,7 +111,12 @@ func buildEmail(feed *gofeed.Feed, contentField ContentField, translator Transla
 		case UseContent:
 			originalContent = item.Content
 		}
-		itemTextChars := len([]rune(strings.TrimSpace(item.Title) + strings.TrimSpace(originalContent)))
+		itemTitleRaw := strings.TrimSpace(item.Title)
+		itemContentRaw := strings.TrimSpace(originalContent)
+		if itemTitleRaw == "" && itemContentRaw == "" {
+			continue
+		}
+		itemTextChars := len([]rune(itemTitleRaw + itemContentRaw))
 		if maxTextChars > 0 && usedTextChars+itemTextChars > maxTextChars {
 			ilog.Infof("build email stop by max_text_chars=%d used=%d next_item_chars=%d", maxTextChars, usedTextChars, itemTextChars)
 			break
@@ -140,6 +145,10 @@ func buildEmail(feed *gofeed.Feed, contentField ContentField, translator Transla
 			continue
 		}
 		body += fmt.Sprintf("%s<br>", translatedContent)
+	}
+	if selectedItems == 0 {
+		ilog.Infof("build email done title=%q no renderable items, skip body build", feed.Title)
+		return subject, ""
 	}
 	body = fmt.Sprintf(module, feed.Title, body)
 	ilog.Infof("build email done title=%q body_chars=%d selected_items=%d source_text_chars=%d", feed.Title, len(body), selectedItems, usedTextChars)

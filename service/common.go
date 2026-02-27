@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mmcdole/gofeed"
@@ -61,6 +62,9 @@ func CommonService(ctx context.Context, config Config) error {
 		if len(f.Items) > 0 {
 			// 邮件样式构建
 			subject, body := config.BuildFunc(&f)
+			if strings.TrimSpace(body) == "" {
+				continue
+			}
 
 			// 发邮件
 			ilog.Infof("发送邮件给 %s，主题：%s", v.Email, subject)

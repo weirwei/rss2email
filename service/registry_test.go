@@ -154,3 +154,41 @@ func TestBuildConfigFromFeedSourceBuildFunc(t *testing.T) {
 		}
 	})
 }
+
+func TestBuildEmailReturnsEmptyBodyWhenNoRenderableItems(t *testing.T) {
+	t.Run("item exceeds max_text_chars", func(t *testing.T) {
+		feed := &gofeed.Feed{
+			Title: "demo",
+			Items: []*gofeed.Item{{
+				Title:       "item-1",
+				Link:        "https://example.com/item-1",
+				Description: "0123456789",
+			}},
+		}
+		_, body := buildEmail(feed, UseDescription, fakeTranslator{prefix: "中文:"}, conf.TranslationConfig{
+			Enabled:             false,
+			MaxItemsPerPush:     10,
+			MaxTextCharsPerPush: 1,
+		})
+		if body != "" {
+			t.Fatalf("expected empty body when no items selected, got: %s", body)
+		}
+	})
+
+	t.Run("item without title and content", func(t *testing.T) {
+		feed := &gofeed.Feed{
+			Title: "demo",
+			Items: []*gofeed.Item{{
+				Link: "https://example.com/item-1",
+			}},
+		}
+		_, body := buildEmail(feed, UseDescription, fakeTranslator{prefix: "中文:"}, conf.TranslationConfig{
+			Enabled:             false,
+			MaxItemsPerPush:     10,
+			MaxTextCharsPerPush: 30000,
+		})
+		if body != "" {
+			t.Fatalf("expected empty body for blank item, got: %s", body)
+		}
+	})
+}
