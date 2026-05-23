@@ -95,6 +95,7 @@ func buildEmail(feed *gofeed.Feed, contentField ContentField, translator Transla
 			body += fmt.Sprintf("%s<br>", originalContent)
 		}
 		body = fmt.Sprintf(module, feed.Title, body)
+		return feed.Title, body
 	}
 	subject = feed.Title
 	maxItems := translationCfg.MaxItemsPerPush
