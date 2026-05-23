@@ -70,12 +70,32 @@ func applyFeedLanguagePolicy(cfg *conf.TranslationConfig, feedLanguage string, s
 		}
 		return
 	}
+	cfg.Enabled = false
 	cfg.TranslateTitle = false
 	cfg.TranslateContent = false
 }
 
 // buildEmail creates email subject and body from a feed using the specified content field
 func buildEmail(feed *gofeed.Feed, contentField ContentField, translator Translator, translationCfg conf.TranslationConfig) (subject string, body string) {
+	if !translationCfg.Enabled {
+		for _, item := range feed.Items {
+			originalContent := item.Description
+			switch contentField {
+			case UseContent:
+				originalContent = item.Content
+			}
+			itemTitleRaw := strings.TrimSpace(item.Title)
+			itemContentRaw := strings.TrimSpace(originalContent)
+			if itemTitleRaw == "" && itemContentRaw == "" {
+				continue
+			}
+			itemTitle := item.Title
+			body += fmt.Sprintf("<h1><a href=\"%s\">%s</a></h1><br>", item.Link, itemTitle)
+
+			body += fmt.Sprintf("%s<br>", originalContent)
+		}
+		body = fmt.Sprintf(module, feed.Title, body)
+	}
 	subject = feed.Title
 	maxItems := translationCfg.MaxItemsPerPush
 	if maxItems <= 0 {
